@@ -1,12 +1,18 @@
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+
 module Main where
 
 import App
-import App.AWS.Env
 import App.Kafka
 import Arbor.Logger
 import Control.Exception
 import Control.Lens
 import Control.Monad                        (void)
+import Control.Monad.Catch                  (MonadThrow)
+import Control.Monad.State
+import Control.Monad.Trans.Class            (lift)
 import Data.Conduit
 import Data.Maybe                           (catMaybes)
 import Data.Semigroup                       ((<>))
@@ -17,40 +23,73 @@ import Kafka.Conduit.Source
 import Network.StatsD                       as S
 import System.Environment
 
+import qualified Data.Map  as M
+import qualified Data.Set  as S
 import qualified Data.Text as T
-import qualified Service   as Srv
+
+reportProgress :: (MonadLogger m, MonadStats m, MonadState AppState m) => m ()
+reportProgress = do
+  reads' <- use readCount
+  writes <- use writeCount
+  let drops = reads' - writes
+  logInfo $ "Reads: " <> show reads' <> ", writes: " <> show writes
+  sendMetric (addCounter (MetricName "scorefilter.read.count" ) id reads')
+  sendMetric (addCounter (MetricName "scorefilter.write.count") id writes)
+  sendMetric (addCounter (MetricName "scorefilter.drop.count") id drops)
+  readCount .= 0
+  writeCount .= 0
+
+onRebalance :: (MonadLogger m, MonadThrow m, MonadIO m) => KafkaConsumer -> TopicName -> (S.Set PartitionId -> m a) -> ConduitM o o m ()
+onRebalance consumer topicName handleRebalance = go S.empty
+  where go lastAssignment = do
+          ma <- await
+          case ma of
+            Just a -> do
+              assignmentMap <- assignment consumer >>= throwAs KafkaErr
+              let currentAssignment = S.fromList (concat (M.lookup topicName assignmentMap))
+              if currentAssignment /= lastAssignment && S.empty /= currentAssignment
+                then do
+                  _ <- lift $ handleRebalance currentAssignment
+                  yield a
+                  go currentAssignment
+                else do
+                  yield a
+                  go lastAssignment
+            Nothing -> return ()
 
 main :: IO ()
 main = do
   opt <- parseOptions
   progName <- T.pack <$> getProgName
-  let logLevel  = opt ^. optLogLevel
+  let aLogLevel = opt ^. optLogLevel
   let kafkaConf = opt ^. optKafkaConfig
   let statsConf = opt ^. optStatsConfig
 
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
-      envAws <- mkEnv (opt ^. optRegion) logLevel lgr
-      let envApp = AppEnv opt stats lgr
+      let envApp = AppEnv opt stats (AppLogger lgr aLogLevel)
 
-      void . runApplication envAws envApp $ do
-        logInfo "Creating Kafka Consumer"
-        consumer <- mkConsumer logLevel lgr kafkaConf
-        -- producer <- mkProducer logLevel lgr kafkaConf -- Use this if you also want a producer.
+      void . runApplication envApp $ do
+        let inputTopic = opt ^. optInputTopic
+        logInfo $ "Creating Kafka Consumer on " <> show inputTopic
+        consumer <- mkConsumer Nothing (opt ^. optInputTopic) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
+        producer <- mkProducer
 
         logInfo "Instantiating Schema Registry"
         sr <- schemaRegistry (kafkaConf ^. schemaRegistryAddress)
 
+        inPartitionCount <- getPartitionCount consumer inputTopic >>= throwAs KafkaErr
+        logInfo $ "Input topic " <> show inputTopic <> " has " <> show inPartitionCount <> " partitions"
+
         logInfo "Running Kafka Consumer"
         runConduit $
           kafkaSourceNoClose consumer (kafkaConf ^. pollTimeoutMs)
-          .| throwLeftSatisfy isFatal                   -- throw any fatal error
-          .| skipNonFatalExcept [isPollTimeout]         -- discard any non-fatal except poll timeouts
-          .| tapRight (Srv.handleStream sr)             -- handle messages (see Service.hs)
-          -- .| batchByOrFlushEither (kafkaConf ^. batchSize) -- Use this if you also want a producer.
+          .| onRebalance consumer inputTopic (\_ -> logInfo "Handling rebalance")
+          .| throwLeftSatisfy isFatal                      -- throw any fatal error
+          .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| everyNSeconds (kafkaConf ^. commitPeriodSec)  -- only commit ever N seconds, so we don't hammer Kafka.
-          .| commitOffsetsSink consumer
-          -- .| flushThenCommitSink consumer producer -- Swap with the above if you want a producer.
+          .| effectC' reportProgress
+          .| flushThenCommitSink consumer producer
 
     pushLogMessage lgr LevelError ("Premature exit, must not happen." :: String)
 
@@ -67,4 +106,3 @@ mkStatsTags statsConf = do
   return $ envTags <> (statsConf ^. statsTags <&> toTag)
   where
     toTag (StatsTag (k, v)) = S.tag k v
-

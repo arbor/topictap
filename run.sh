@@ -13,9 +13,9 @@ path=$(stack path --local-install-root)
 
 ${path}/bin/${exe} \
   --kafka-broker ${KAFKA_HOST}:9092 \
-  --kafka-group-id ${CLUB_NAME}--attackstream-attacks-score-filter-${USER} \
+  --kafka-group-id ${CLUB_NAME}--topictap-${USER} \
   --kafka-schema-registry http://${KAFKA_HOST}:8081 \
-  --input-topic ${CLUB_NAME}--attackstream-attacks-score-filter-input \
+  --input-topic ${CLUB_NAME}--topictap-input \
   --kafka-poll-timeout-ms 10000 \
   --kafka-debug-enable "broker,protocol" \
   --log-level LevelInfo

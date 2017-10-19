@@ -10,8 +10,7 @@ export STATSD_HOST=${STATSD_HOST:-$GATEWAY_IP}
 /usr/local/bin/set-environment
 
 set -x
-attackstream-attacks-score-filter \
-  ${AWS_REGION+                       --region                            "${AWS_REGION}"                       } \
+kafka-to-s3 \
   ${KAFKA_BROKER+                     --kafka-broker                      "${KAFKA_BROKER}"                     } \
   ${KAFKA_GROUP_ID+                   --kafka-group-id                    "${KAFKA_GROUP_ID}"                   } \
   ${KAFKA_SCHEMA_REGISTRY+            --kafka-schema-registry             "${KAFKA_SCHEMA_REGISTRY}"            } \

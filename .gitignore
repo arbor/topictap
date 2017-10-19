@@ -1,7 +1,5 @@
 # Created by http://www.gitignore.io
 
-*.avsc
-
 ### OSX ###
 .DS_Store
 *.DS_Store

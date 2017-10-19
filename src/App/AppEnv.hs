@@ -5,16 +5,22 @@ module App.AppEnv
 where
 
 import App.Options
-import Arbor.Logger   (TimedFastLogger)
+import Arbor.Logger   (LogLevel, TimedFastLogger)
 import Control.Lens
 import Network.StatsD (StatsClient)
+
+data AppLogger = AppLogger
+  { _alLogger   :: TimedFastLogger
+  , _alLogLevel :: LogLevel
+  }
 
 data AppEnv = AppEnv
   { _appOptions     :: Options
   , _appStatsClient :: StatsClient
-  , _appLogger      :: TimedFastLogger
+  , _appLog         :: AppLogger
   }
 
+makeClassy ''AppLogger
 makeClassy ''AppEnv
 
 class HasStatsClient a where
@@ -26,14 +32,11 @@ instance HasStatsClient StatsClient where
 instance HasStatsClient AppEnv where
   statsClient = appStatsClient
 
-class HasLogger a where
-  logger :: Lens' a TimedFastLogger
-
-instance HasLogger AppEnv where
-  logger = appLogger
-
 instance HasKafkaConfig AppEnv where
-  kafkaConfig = appEnv . kafkaConfig
+  kafkaConfig = appOptions . kafkaConfig
 
 instance HasStatsConfig AppEnv where
-  statsConfig = appEnv . statsConfig
+  statsConfig = appOptions . statsConfig
+
+instance HasAppLogger AppEnv where
+  appLogger = appEnv . appLog

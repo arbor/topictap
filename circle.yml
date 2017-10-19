@@ -1,12 +1,9 @@
 version: 2.0
 jobs:
   build:
-    working_directory: ~/attackstream-attacks-score-filter
+    working_directory: ~/topictap
     docker:
-      - image: fpco/stack-build:latest
-
-    environment:
-      LD_LIBRARY_PATH: /usr/local/lib
+      - image: quay.io/haskell_works/stack-build-python
 
     steps:
       - checkout
@@ -14,46 +11,46 @@ jobs:
       - run: grep '^resolver:' stack.yaml > resolver.txt
 
       - restore_cache:
-          key: librdkafka-{{ checksum "scripts/build-librdkafka.sh" }}
+          key: zejy3dg-librdkafka-{{ checksum "scripts/build-librdkafka.sh" }}
       - run:
           name: Build librdkafka
           command: ./scripts/build-librdkafka.sh
       - save_cache:
-          key: librdkafka-{{ checksum "scripts/build-librdkafka.sh" }}
-          paths: ~/attackstream-attacks-score-filter/.librdkafka
+          key: zejy3dg-librdkafka-{{ checksum "scripts/build-librdkafka.sh" }}
+          paths: ~/topictap/.librdkafka
 
       - restore_cache:
           keys:
-            - dot-stack-{{ checksum "stack.yaml" }}-{{ checksum "attackstream-attacks-score-filter.cabal" }}
-            - dot-stack-{{ checksum "stack.yaml" }}
-            - dot-stack-{{ checksum "resolver.txt" }}
-            - dot-stack-resolver-{{ checksum "resolver.txt" }}
+            - zejy3dg-dot-stack-{{ checksum "stack.yaml" }}-{{ checksum "topictap.cabal" }}
+            - zejy3dg-dot-stack-{{ checksum "stack.yaml" }}
+            - zejy3dg-dot-stack-{{ checksum "resolver.txt" }}
+            - zejy3dg-dot-stack-resolver-{{ checksum "resolver.txt" }}
       - run: stack setup
       - save_cache:
-          key: dot-stack-resolver-{{ checksum "resolver.txt" }}
+          key: zejy3dg-dot-stack-resolver-{{ checksum "resolver.txt" }}
           paths:
             - ~/.stack
       - save_cache:
-          key: dot-stack-{{ checksum "stack.yaml" }}
+          key: zejy3dg-dot-stack-{{ checksum "stack.yaml" }}
           paths:
             - ~/.stack
 
       - restore_cache:
-          key: stack-work-{{ checksum "stack.yaml" }}
+          key: zejy3dg-stack-work-{{ checksum "stack.yaml" }}
       - run: stack build --test --no-run-tests --dependencies-only
       - save_cache:
-          key: dot-stack-{{ checksum "resolver.txt" }}
+          key: zejy3dg-dot-stack-{{ checksum "resolver.txt" }}
           paths:
             - ~/.stack
 
       - run: stack build --test --no-run-tests
       - save_cache:
-          key: dot-stack-{{ checksum "stack.yaml" }}-{{ checksum "attackstream-attacks-score-filter.cabal" }}
+          key: zejy3dg-dot-stack-{{ checksum "stack.yaml" }}-{{ checksum "topictap.cabal" }}
           paths:
             - ~/.stack
       - save_cache:
-          key: stack-work-{{ checksum "stack.yaml" }}
-          paths: ~/attackstream-attacks-score-filter/.stack-work
+          key: zejy3dg-stack-work-{{ checksum "stack.yaml" }}
+          paths: ~/topictap/.stack-work
 
       - setup_remote_docker
       - run:

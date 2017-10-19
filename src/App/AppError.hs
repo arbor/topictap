@@ -7,6 +7,7 @@ import Kafka.Types
 
 data AppError = KafkaErr KafkaError
               | DecodeErr DecodeError
+              | SchemaErr SchemaRegistryError
               | AppErr String
               deriving (Show, Eq)
 instance Exception AppError
