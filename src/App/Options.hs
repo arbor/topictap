@@ -37,10 +37,12 @@ data StatsConfig = StatsConfig
   } deriving (Show)
 
 data Options = Options
-  { _optLogLevel    :: LogLevel
-  , _optInputTopics :: [TopicName]
-  , _optKafkaConfig :: KafkaConfig
-  , _optStatsConfig :: StatsConfig
+  { _optLogLevel         :: LogLevel
+  , _optInputTopics      :: [TopicName]
+  , _optOutputBucket     :: String
+  , _optStagingDirectory :: String
+  , _optKafkaConfig      :: KafkaConfig
+  , _optStatsConfig      :: StatsConfig
   } deriving (Show)
 
 makeClassy ''KafkaConfig
@@ -56,73 +58,95 @@ instance HasStatsConfig Options where
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig
   <$> strOption
-    (  long "statsd-host"
-    <> metavar "HOST_NAME"
-    <> showDefault <> value "127.0.0.1"
-    <> help "StatsD host name or IP address")
+      (   long "statsd-host"
+      <>  metavar "HOST_NAME"
+      <>  showDefault <> value "127.0.0.1"
+      <>  help "StatsD host name or IP address"
+      )
   <*> readOption
-    (  long "statsd-port"
-    <> metavar "PORT"
-    <> showDefault <> value 8125
-    <> help "StatsD port"
-    <> hidden)
+      (   long "statsd-port"
+      <>  metavar "PORT"
+      <>  showDefault <> value 8125
+      <>  help "StatsD port"
+      <>  hidden
+      )
   <*> ( string2Tags <$> strOption
-    (  long "statsd-tags"
-    <> metavar "TAGS"
-    <> showDefault <> value []
-    <> help "StatsD tags"))
+        (   long "statsd-tags"
+        <>  metavar "TAGS"
+        <>  showDefault <> value []
+        <>  help "StatsD tags"
+        )
+      )
   <*> ( SampleRate <$> readOption
-    (  long "statsd-sample-rate"
-    <> metavar "SAMPLE_RATE"
-    <> showDefault <> value 0.01
-    <> help "StatsD sample rate"))
+        (   long "statsd-sample-rate"
+        <>  metavar "SAMPLE_RATE"
+        <>  showDefault <> value 0.01
+        <>  help "StatsD sample rate"
+        )
+      )
 
 kafkaConfigParser :: Parser KafkaConfig
 kafkaConfigParser = KafkaConfig
   <$> ( BrokerAddress <$> strOption
-    (  long "kafka-broker"
-    <> metavar "ADDRESS:PORT"
-    <> help "Kafka bootstrap broker"
-    ))
+        (   long "kafka-broker"
+        <>  metavar "ADDRESS:PORT"
+        <>  help "Kafka bootstrap broker"
+        )
+      )
   <*> strOption
-    (  long "kafka-schema-registry"
-    <> metavar "HTTP_URL:PORT"
-    <> help "Schema registry address")
-  <*> (Timeout <$> readOption
-    (  long "kafka-poll-timeout-ms"
-    <> metavar "KAFKA_POLL_TIMEOUT_MS"
-    <> showDefault <> value 1000
-    <> help "Kafka poll timeout (in milliseconds)"))
+      (   long "kafka-schema-registry"
+      <>  metavar "HTTP_URL:PORT"
+      <>  help "Schema registry address")
+  <*> ( Timeout <$> readOption
+        (   long "kafka-poll-timeout-ms"
+        <>  metavar "KAFKA_POLL_TIMEOUT_MS"
+        <>  showDefault <> value 1000
+        <>  help "Kafka poll timeout (in milliseconds)")
+        )
   <*> readOption
-    (  long "kafka-queued-max-messages-kbytes"
-    <> metavar "KAFKA_QUEUED_MAX_MESSAGES_KBYTES"
-    <> showDefault <> value 100000
-    <> help "Kafka queued.max.messages.kbytes")
+      (   long "kafka-queued-max-messages-kbytes"
+      <>  metavar "KAFKA_QUEUED_MAX_MESSAGES_KBYTES"
+      <>  showDefault <> value 100000
+      <>  help "Kafka queued.max.messages.kbytes"
+      )
   <*> ( ConsumerGroupId <$> strOption
-    (  long "kafka-group-id"
-    <> metavar "GROUP_ID"
-    <> help "Kafka consumer group id"))
+        (   long "kafka-group-id"
+        <>  metavar "GROUP_ID"
+        <>  help "Kafka consumer group id"
+        )
+      )
   <*> strOption
-    (  long "kafka-debug-enable"
-    <> metavar "KAFKA_DEBUG_ENABLE"
-    <> showDefault <> value "broker,protocol"
-    <> help "Kafka debug modules, comma separated names: see debug in CONFIGURATION.md"
-    )
+      (   long "kafka-debug-enable"
+      <>  metavar "KAFKA_DEBUG_ENABLE"
+      <>  showDefault <> value "broker,protocol"
+      <>  help "Kafka debug modules, comma separated names: see debug in CONFIGURATION.md"
+      )
   <*> readOption
-    (  long "kafka-consumer-commit-period-sec"
-    <> metavar "KAFKA_CONSUMER_COMMIT_PERIOD_SEC"
-    <> showDefault <> value 60
-    <> help "Kafka consumer offsets commit period (in seconds)"
-    )
+      (   long "kafka-consumer-commit-period-sec"
+      <>  metavar "KAFKA_CONSUMER_COMMIT_PERIOD_SEC"
+      <>  showDefault <> value 60
+      <>  help "Kafka consumer offsets commit period (in seconds)"
+      )
 
 optParser :: Parser Options
 optParser = Options
   <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
-    (  long "log-level"
-    <> metavar "LOG_LEVEL"
-    <> showDefault <> value LevelInfo
-    <> help "Log level")
+      (   long "log-level"
+      <>  metavar "LOG_LEVEL"
+      <>  showDefault <> value LevelInfo
+      <>  help "Log level"
+      )
   <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
+  <*> strOption
+      (   long "output-bucket"
+      <>  metavar "BUCKET"
+      <>  help "Output bucket.  Data from input topics will be written to this bucket"
+      )
+    <*> strOption
+      (   long "staging-directory"
+      <>  metavar "PATH"
+      <>  help "Staging directory where generated files are stored and scheduled for upload to S3"
+      )
   <*> kafkaConfigParser
   <*> statsConfigParser
   where topicOption = strOption
