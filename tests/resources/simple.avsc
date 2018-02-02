@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "SimpleRecord",
+  "fields": [
+    { "name": "boolean", "type": "boolean"   },
+    { "name": "string", "type": "string"  },
+    { "name": "int",    "type": "int"     },
+    { "name": "long",   "type": "long"    },
+    { "name": "double", "type": "double"  },
+    { "name": "bytes",  "type": "bytes"   },
+    { "name": "maybe",  "type": ["null", "string"]  },
+    { "name": "either", "type": ["int", "string"]   },
+    {
+      "name": "enum",
+      "type": {
+        "type": "enum",
+        "name": "Suit",
+        "symbols" : ["SPADES", "HEARTS", "DIAMONDS", "CLUBS"]
+      }
+    },
+    {
+      "name": "record",
+      "type": {
+        "name": "InnerRecord",
+        "type": "record",
+        "fields": [
+          { "name": "id",    "type": "int"    },
+          { "name": "value", "type": "string" }
+        ]
+      }
+    }
+  ]
+}
