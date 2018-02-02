@@ -1,3 +1,3 @@
 # topictap
 
-![Alt](doc/component-diagram.xml)
+![Alt](doc/assets/component-diagram.png)
