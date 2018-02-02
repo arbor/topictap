@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cf14574f724b9857a7fa9dfe13c59d2f7e2e74fbf285ff9ba03786cd69ca5c32
+-- hash: 8d3cd146ee74f278ba400d322070fc59fa8e2f100abadd64cef44add93edc03f
 
 name:           topictap
 version:        1.0.0
@@ -18,6 +18,7 @@ cabal-version:  >= 1.10
 
 extra-source-files:
     README.md
+    tests/resources/simple.avsc
 
 library
   hs-source-dirs:
@@ -28,6 +29,7 @@ library
       aeson
     , avro
     , base >=4.7 && <5
+    , base64-bytestring
     , bifunctors
     , bytestring
     , conduit
@@ -124,6 +126,7 @@ test-suite tests
       aeson
     , avro
     , base >=4.7 && <5
+    , base64-bytestring
     , bifunctors
     , bytestring
     , conduit
@@ -136,10 +139,13 @@ test-suite tests
     , hs-arbor-logger
     , hspec
     , hw-conduit
+    , hw-hedgehog
+    , hw-hspec-hedgehog
     , hw-kafka-avro
     , hw-kafka-client
     , hw-kafka-conduit
     , lens
+    , lens-aeson
     , monad-control
     , monad-logger
     , mtl
@@ -153,6 +159,7 @@ test-suite tests
   if os(osx)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
   other-modules:
+      App.AvroToJsonSpec
       App.OptionsSpec
       Paths_topictap
   default-language: Haskell2010

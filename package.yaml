@@ -8,6 +8,7 @@ license: MIT
 homepage: https://github.com/packetloop/topictap#readme
 extra-source-files:
 - README.md
+- tests/resources/simple.avsc
 default-extensions:
 - OverloadedStrings
 - TupleSections
@@ -51,6 +52,7 @@ library:
   - App.Kafka
   - App.Options
   dependencies:
+  - base64-bytestring
   - conduit-combinators
   - http-types
   - optparse-applicative
@@ -87,9 +89,13 @@ tests:
     - -Wall
     - -threaded
     dependencies:
-    - topictap
-    - hspec
+    - base64-bytestring
     - hedgehog
+    - hspec
+    - hw-hedgehog
+    - hw-hspec-hedgehog
+    - lens-aeson
+    - topictap
     when:
     - condition: os(osx)
       cpp-options:
