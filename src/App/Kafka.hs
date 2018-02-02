@@ -32,10 +32,10 @@ rebalanceHandler onRebalance _ e =
 
 mkConsumer :: (MonadResource m, MonadReader r m, HasKafkaConfig r, HasAppLogger r)
             => Maybe ConsumerGroupSuffix
-            -> TopicName
+            -> [TopicName]
             -> ([(TopicName, PartitionId)] -> IO ())
             -> m KafkaConsumer
-mkConsumer suffix topic onRebalance = do
+mkConsumer suffix ts onRebalance = do
   conf <- view kafkaConfig
   logs <- view appLogger
   let props = fold
@@ -50,7 +50,7 @@ mkConsumer suffix topic onRebalance = do
         , KSrc.setCallback (errorCallback (\e s -> pushLogMessage (logs ^. alLogger) LevelError ("[" <> show e <> "] " <> s)))
         , KSrc.setCallback (rebalanceCallback (rebalanceHandler onRebalance))
         ]
-      sub = topics [topic] <> offsetReset Earliest
+      sub = topics ts <> offsetReset Earliest
       cons = newConsumer props sub >>= either throwM return
   snd <$> allocate cons (void . closeConsumer)
 

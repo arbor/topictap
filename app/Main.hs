@@ -7,6 +7,7 @@ module Main where
 import App
 import App.Kafka
 import Arbor.Logger
+import Conduit
 import Control.Exception
 import Control.Lens
 import Control.Monad                        (void)
@@ -21,6 +22,7 @@ import Kafka.Avro                           (schemaRegistry)
 import Kafka.Conduit.Sink                   hiding (logLevel)
 import Kafka.Conduit.Source
 import Network.StatsD                       as S
+import Service
 import System.Environment
 
 import qualified Data.Map  as M
@@ -70,23 +72,21 @@ main = do
       let envApp = AppEnv opt stats (AppLogger lgr aLogLevel)
 
       void . runApplication envApp $ do
-        let inputTopic = opt ^. optInputTopic
-        logInfo $ "Creating Kafka Consumer on " <> show inputTopic
-        consumer <- mkConsumer Nothing (opt ^. optInputTopic) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
+        let inputTopics = opt ^. optInputTopics
+        logInfo "Creating Kafka Consumer on the following topics:"
+        forM_ inputTopics $ \inputTopic -> logInfo $ "  " <> show inputTopic
+        consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
         producer <- mkProducer
 
         logInfo "Instantiating Schema Registry"
         sr <- schemaRegistry (kafkaConf ^. schemaRegistryAddress)
 
-        inPartitionCount <- getPartitionCount consumer inputTopic >>= throwAs KafkaErr
-        logInfo $ "Input topic " <> show inputTopic <> " has " <> show inPartitionCount <> " partitions"
-
         logInfo "Running Kafka Consumer"
         runConduit $
           kafkaSourceNoClose consumer (kafkaConf ^. pollTimeoutMs)
-          .| onRebalance consumer inputTopic (\_ -> logInfo "Handling rebalance")
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
+          .| rightC (handleStream sr)
           .| everyNSeconds (kafkaConf ^. commitPeriodSec)  -- only commit ever N seconds, so we don't hammer Kafka.
           .| effectC' reportProgress
           .| flushThenCommitSink consumer producer
