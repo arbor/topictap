@@ -23,7 +23,9 @@ import Kafka.Conduit.Sink                   hiding (logLevel)
 import Kafka.Conduit.Source
 import Network.StatsD                       as S
 import Service
+import System.Directory
 import System.Environment
+import System.IO.Error
 
 import qualified Data.Map  as M
 import qualified Data.Set  as S
@@ -79,7 +81,16 @@ main = do
         logInfo "Creating Kafka Consumer on the following topics:"
         forM_ inputTopics $ \inputTopic -> logInfo $ "  " <> show inputTopic
 
-        logInfo $ "Staging directory is: " <> show stagingDirectory
+        logInfo $ "Preparing staging directory: " <> show stagingDirectory
+        -- Ensure we our staging directory exists and that we have write access to the
+        -- directory by creating a test ready directory.
+        let readyDirectory = stagingDirectory <> "/ready"
+        liftIO $ removeDirectoryRecursive readyDirectory `catch` \(e :: IOException) ->
+          unless (isDoesNotExistErrorType (ioeGetErrorType e)) $ do
+            pushLogMessage lgr LevelError ("Unable to prepare staging directory" :: String)
+            throwM e
+        liftIO $ createDirectoryIfMissing True readyDirectory
+
         logInfo $ "Writing to output bucket: " <> show outputBucket
 
         consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
