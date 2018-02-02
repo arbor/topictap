@@ -19,7 +19,6 @@ import Network.StatsD               as S
 
 import App.AppEnv
 import App.AppState
-import App.AvroToJson
 import App.Options
 
 type AppName = Text

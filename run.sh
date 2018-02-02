@@ -15,7 +15,8 @@ ${path}/bin/${exe} \
   --kafka-broker ${KAFKA_HOST}:9092 \
   --kafka-group-id ${CLUB_NAME}--topictap-${USER} \
   --kafka-schema-registry http://${KAFKA_HOST}:8081 \
-  --input-topic ${CLUB_NAME}--topictap-input \
+  --topic ${CLUB_NAME}--topictap-input-1 \
+  --topic ${CLUB_NAME}--topictap-input-2 \
   --kafka-poll-timeout-ms 10000 \
   --kafka-debug-enable "broker,protocol" \
   --log-level LevelInfo

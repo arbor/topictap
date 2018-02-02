@@ -16,7 +16,6 @@ import Data.ByteString                      (ByteString)
 import Data.ByteString.Lazy                 (fromStrict)
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro
-import Kafka.Conduit.Sink
 import Kafka.Conduit.Source
 
 import qualified Data.Aeson           as J
@@ -29,10 +28,8 @@ import qualified Data.Conduit.List    as L
 -- | Handles the stream of incoming messages.
 handleStream :: MonadApp m
              => SchemaRegistry
-             -> TopicName
-             -> KafkaProducer
              -> Conduit (ConsumerRecord (Maybe ByteString) (Maybe ByteString)) m ()
-handleStream sr topic prod =
+handleStream sr =
   bisequenceValue                   -- extracting both key and value from consumer records
   .| L.catMaybes                    -- discard empty values
   .| mapMC (decodeMessage sr)       -- decode avro message.
@@ -42,7 +39,7 @@ handleStream sr topic prod =
 
 decodeMessage :: (MonadIO m, MonadThrow m) => SchemaRegistry -> ConsumerRecord ByteString ByteString -> m J.Value
 decodeMessage sr msg = do
-  let (k, v) = (crKey msg, crValue msg)
+  let (_, v) = (crKey msg, crValue msg)
   value <- decodeWithSchema2 sr (fromStrict v) >>= throwAs DecodeErr
   return (avroToJson value)
 

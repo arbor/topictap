@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+
 module App.Options where
 
 import Control.Lens
@@ -37,7 +38,7 @@ data StatsConfig = StatsConfig
 
 data Options = Options
   { _optLogLevel    :: LogLevel
-  , _optInputTopic  :: TopicName
+  , _optInputTopics :: [TopicName]
   , _optKafkaConfig :: KafkaConfig
   , _optStatsConfig :: StatsConfig
   } deriving (Show)
@@ -120,14 +121,19 @@ optParser = Options
     (  long "log-level"
     <> metavar "LOG_LEVEL"
     <> showDefault <> value LevelInfo
-    <> help "Log level.")
-  <*> ( TopicName <$> strOption
-    (  long "input-topic"
-    <> metavar "TOPIC"
-    <> help "Input topic"
-    ))
+    <> help "Log level")
+  <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
   <*> kafkaConfigParser
   <*> statsConfigParser
+  where topicOption = strOption
+          (  long "topic"
+          <> metavar "TOPIC"
+          <> help "Input topic.  Multiple topics can be supplied by repeating the flag or comma/space separating the topic names"
+          )
+
+commaToSpace :: Char -> Char
+commaToSpace ',' = ' '
+commaToSpace c   = c
 
 readOption :: Read a => Mod OptionFields a -> Parser a
 readOption = option $ eitherReader readEither
