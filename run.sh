@@ -17,6 +17,8 @@ ${path}/bin/${exe} \
   --kafka-schema-registry http://${KAFKA_HOST}:8081 \
   --topic ${CLUB_NAME}--topictap-input-1 \
   --topic ${CLUB_NAME}--topictap-input-2 \
+  --output-bucket ${CLUB_NAME}--kafka-backup-2oh2hnw \
+  --staging-directory /tmp/staging-files \
   --kafka-poll-timeout-ms 10000 \
   --kafka-debug-enable "broker,protocol" \
   --log-level LevelInfo

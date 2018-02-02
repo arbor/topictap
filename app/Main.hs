@@ -72,11 +72,17 @@ main = do
       let envApp = AppEnv opt stats (AppLogger lgr aLogLevel)
 
       void . runApplication envApp $ do
-        let inputTopics = opt ^. optInputTopics
+        let inputTopics       = opt ^. optInputTopics
+        let outputBucket      = opt ^. optOutputBucket
+        let stagingDirectory  = opt ^. optStagingDirectory
+
         logInfo "Creating Kafka Consumer on the following topics:"
         forM_ inputTopics $ \inputTopic -> logInfo $ "  " <> show inputTopic
+
+        logInfo $ "Staging directory is: " <> show stagingDirectory
+        logInfo $ "Writing to output bucket: " <> show outputBucket
+
         consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
-        producer <- mkProducer
 
         logInfo "Instantiating Schema Registry"
         sr <- schemaRegistry (kafkaConf ^. schemaRegistryAddress)
@@ -89,7 +95,7 @@ main = do
           .| rightC (handleStream sr)
           .| everyNSeconds (kafkaConf ^. commitPeriodSec)  -- only commit ever N seconds, so we don't hammer Kafka.
           .| effectC' reportProgress
-          .| flushThenCommitSink consumer producer
+          .| commitOffsetsSink consumer
 
     pushLogMessage lgr LevelError ("Premature exit, must not happen." :: String)
 

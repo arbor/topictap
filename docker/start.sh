@@ -19,6 +19,8 @@ kafka-to-s3 \
   ${KAFKA_DEBUG_ENABLE+               --kafka-debug-enable                "${KAFKA_DEBUG_ENABLE}"               } \
   ${KAFKA_CONSUMER_COMMIT_PERIOD_SEC+ --kafka-consumer-commit-period-sec  "${KAFKA_CONSUMER_COMMIT_PERIOD_SEC}" } \
   ${INPUT_TOPIC_IN+                   --topic                             "${INPUT_TOPIC_IN}"                   } \
+  ${OUTPUT_BUCKET_OUT+                --output-bucket                     "${OUTPUT_BUCKET_OUT}"                } \
+  ${STAGING_DIRECTORY+                --staging-directory                 "${STAGING_DIRECTORY}"                } \
   ${STATSD_HOST+                      --statsd-host                       "${STATSD_HOST}"                      } \
   ${STATSD_SAMPLE_RATE+               --statsd-sample-rate                "${STATSD_SAMPLE_RATE}"               } \
   ${STATSD_TAGS+                      --statsd-tags                       "${STATSD_TAGS}"                      } \
