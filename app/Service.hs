@@ -5,7 +5,6 @@ module Service
   ) where
 
 import App
-import App.AvroToJson
 import Conduit
 import Control.Lens
 import Control.Monad.Catch                  (MonadThrow)
@@ -41,7 +40,7 @@ decodeMessage :: (MonadIO m, MonadThrow m) => SchemaRegistry -> ConsumerRecord B
 decodeMessage sr msg = do
   let (_, v) = (crKey msg, crValue msg)
   value <- decodeWithSchema2 sr (fromStrict v) >>= throwAs DecodeErr
-  return (avroToJson value)
+  return (J.toJSON value)
 
 leftMap :: (e -> e') -> Either e r -> Either e' r
 leftMap _ (Right r) = Right r
