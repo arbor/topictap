@@ -48,7 +48,6 @@ library:
   - App.AppError
   - App.AppEnv
   - App.AppState
-  - App.AvroToJson
   - App.Kafka
   - App.Options
   dependencies:
