@@ -2,8 +2,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+
 module App.Application
-where
+  ( AppName
+  , MonadApp
+  , Application (..)
+  , runApplication
+  ) where
 
 import Arbor.Logger
 import Control.Lens

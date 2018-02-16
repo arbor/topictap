@@ -4,6 +4,7 @@
 
 module Main
   ( main
+  , onRebalance
   ) where
 
 import App
