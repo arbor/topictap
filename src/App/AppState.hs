@@ -8,10 +8,6 @@ module App.AppState
   , fileCacheEmpty
   , appStateEmpty
 
-  , stateReadCount
-  , stateWriteCount
-  , stateFileCache
-
   , fceFileName
   , fceOffsetFirst
   , fceOffsetLast
@@ -19,7 +15,6 @@ module App.AppState
   , fcePartitionId
   , fceHandle
 
-  , fcEntries
   ) where
 
 import Control.Lens

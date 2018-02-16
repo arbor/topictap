@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fddd531ba71fcbda755556e2995853158b0bbbcdcd69800ede82870f2d0b5f45
+-- hash: df7c70ea7ca32f9f47b83009cf823f9e3e99cfaeb2cf4ed1a40158e5616dec21
 
 name:           topictap
 version:        1.0.0
@@ -30,6 +30,7 @@ library
     , amazonka
     , amazonka-core
     , amazonka-s3
+    , async-pool
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -62,6 +63,7 @@ library
     , resourcet
     , split
     , text
+    , time
     , transformers
     , transformers-base
   if os(osx)
@@ -80,6 +82,7 @@ library
       App.Service
       App.ToSha256Text
   other-modules:
+      App.CancellationToken
       App.Orphans
       App.Persist
       DevApp
@@ -97,6 +100,7 @@ executable topictap
     , amazonka
     , amazonka-core
     , amazonka-s3
+    , async-pool
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -127,6 +131,7 @@ executable topictap
     , random
     , resourcet
     , text
+    , time
     , topictap
     , transformers
     , transformers-base
@@ -148,6 +153,7 @@ test-suite tests
     , amazonka
     , amazonka-core
     , amazonka-s3
+    , async-pool
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -182,6 +188,7 @@ test-suite tests
     , random
     , resourcet
     , text
+    , time
     , topictap
     , transformers
     , transformers-base

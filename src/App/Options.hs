@@ -50,7 +50,7 @@ data Options = Options
 
 data AwsConfig = AwsConfig
   { _awsRegion     :: Region
-  , _binBucket     :: BucketName
+  , _storeBucket   :: BucketName
   , _uploadThreads :: Int
   } deriving (Show)
 
@@ -150,9 +150,9 @@ awsConfigParser = AwsConfig
       <> help "The AWS region in which to operate"
       )
   <*> readOrFromTextOption
-      (  long "bins-bucket"
+      (  long "store-bucket"
       <> metavar "BUCKET_NAME"
-      <> help "Bin files bucket name")
+      <> help "Store bucket name")
   <*> readOption
       (  long "upload-threads"
       <> metavar "NUM_THREADS"
