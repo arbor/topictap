@@ -2,11 +2,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
-module Main where
+module Main
+  ( main
+  ) where
 
 import App
 import App.AWS.Env
 import App.Kafka
+import App.Service
 import Arbor.Logger
 import Conduit
 import Control.Exception
@@ -22,7 +25,6 @@ import Kafka.Avro                           (schemaRegistry)
 import Kafka.Conduit.Sink
 import Kafka.Conduit.Source
 import Network.StatsD                       as S
-import Service
 import System.Directory
 import System.Environment
 import System.IO.Error

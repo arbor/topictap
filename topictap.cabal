@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2e8cac5b231386ce7d5a9ea4660a6c6efe375502008a0f1338d5f6fddbfa78c9
+-- hash: fa1a5649ddb2055544d432ba846a888bca3f1622210ae4f9dc90f15a4ed2651c
 
 name:           topictap
 version:        1.0.0
@@ -77,6 +77,7 @@ library
       App.Codec
       App.Kafka
       App.Options
+      App.Service
       App.ToSha256Text
   other-modules:
       App.Orphans
@@ -130,7 +131,6 @@ executable topictap
   if os(osx)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
   other-modules:
-      Service
       Paths_topictap
   default-language: Haskell2010
 
