@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6f4a98aeda43c55433dea4a57018c156c821624b16273823e89eeb94d36340da
+-- hash: 14cb1d81b4c7010704253c09525174ab213e48df69497181882ec0b0103ad61b
 
 name:           topictap
 version:        1.0.0
@@ -27,6 +27,9 @@ library
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       aeson
+    , amazonka
+    , amazonka-core
+    , amazonka-s3
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -35,6 +38,7 @@ library
     , bytestring
     , conduit
     , conduit-combinators
+    , conduit-extra
     , containers
     , cryptohash
     , datadog
@@ -42,6 +46,7 @@ library
     , exceptions
     , fast-logger
     , hs-arbor-logger
+    , http-client
     , http-types
     , hw-conduit
     , hw-kafka-avro
@@ -63,14 +68,17 @@ library
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
   exposed-modules:
       App
-      App.Application
-      App.AppError
       App.AppEnv
+      App.AppError
+      App.Application
       App.AppState
+      App.AWS.Env
+      App.AWS.S3
       App.Kafka
       App.Options
       App.ToSha256Text
   other-modules:
+      App.Orphans
       Paths_topictap
   default-language: Haskell2010
 
@@ -82,6 +90,9 @@ executable topictap
   ghc-options: -threaded -rtsopts -O2 -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       aeson
+    , amazonka
+    , amazonka-core
+    , amazonka-s3
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -89,6 +100,7 @@ executable topictap
     , bytestring
     , conduit
     , conduit-combinators
+    , conduit-extra
     , containers
     , cryptohash
     , datadog
@@ -96,6 +108,8 @@ executable topictap
     , exceptions
     , fast-logger
     , hs-arbor-logger
+    , http-client
+    , http-types
     , hw-conduit
     , hw-kafka-avro
     , hw-kafka-client
@@ -128,6 +142,9 @@ test-suite tests
   ghc-options: -Wall -threaded -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       aeson
+    , amazonka
+    , amazonka-core
+    , amazonka-s3
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -135,6 +152,7 @@ test-suite tests
     , bifunctors
     , bytestring
     , conduit
+    , conduit-extra
     , containers
     , cryptohash
     , datadog
@@ -144,6 +162,8 @@ test-suite tests
     , hedgehog
     , hs-arbor-logger
     , hspec
+    , http-client
+    , http-types
     , hw-conduit
     , hw-hedgehog
     , hw-hspec-hedgehog

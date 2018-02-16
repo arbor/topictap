@@ -36,11 +36,15 @@ default-extensions:
 dependencies:
 - base >=4.7 && <5
 - aeson
+- amazonka
+- amazonka-core
+- amazonka-s3
 - avro
 - base16-bytestring
 - bifunctors
 - bytestring
 - conduit
+- conduit-extra
 - containers
 - cryptohash
 - datadog
@@ -48,6 +52,8 @@ dependencies:
 - exceptions
 - fast-logger
 - hs-arbor-logger
+- http-client
+- http-types
 - hw-conduit
 - hw-kafka-avro
 - hw-kafka-client
@@ -72,10 +78,12 @@ library:
   - -Wredundant-constraints
   exposed-modules:
   - App
-  - App.Application
-  - App.AppError
   - App.AppEnv
+  - App.AppError
+  - App.Application
   - App.AppState
+  - App.AWS.Env
+  - App.AWS.S3
   - App.Kafka
   - App.Options
   - App.ToSha256Text

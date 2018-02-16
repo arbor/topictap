@@ -5,6 +5,7 @@
 module Main where
 
 import App
+import App.AWS.Env
 import App.Kafka
 import Arbor.Logger
 import Conduit
@@ -64,13 +65,14 @@ main :: IO ()
 main = do
   opt <- parseOptions
   progName <- T.pack <$> getProgName
-  let aLogLevel = opt ^. optLogLevel
+  let logLvl    = opt ^. optLogLevel
   let kafkaConf = opt ^. optKafkaConfig
   let statsConf = opt ^. optStatsConfig
 
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
-      let envApp = AppEnv opt stats (AppLogger lgr aLogLevel)
+      envAws <- mkEnv (opt ^. awsRegion) logLvl lgr
+      let envApp = AppEnv opt stats (AppLogger lgr logLvl) envAws
 
       void . runApplication envApp $ do
         let inputTopics       = opt ^. optInputTopics
