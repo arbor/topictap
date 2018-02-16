@@ -14,7 +14,6 @@ import Control.Monad                        (void)
 import Control.Monad.Catch                  (MonadThrow)
 import Control.Monad.State
 import Control.Monad.Trans.Class            (lift)
-import Data.Conduit
 import Data.Maybe                           (catMaybes)
 import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator
@@ -103,7 +102,7 @@ main = do
           kafkaSourceNoClose consumer (kafkaConf ^. pollTimeoutMs)
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
-          .| rightC (handleStream sr)
+          .| rightC (handleStream sr (opt ^. optStagingDirectory))
           .| everyNSeconds (kafkaConf ^. commitPeriodSec)  -- only commit ever N seconds, so we don't hammer Kafka.
           .| effectC' reportProgress
           .| commitOffsetsSink consumer
