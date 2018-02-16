@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 230c8678a3ddb7c96a64132bcc84070e5e3b94df51bf364802514fc1eb2cf4b4
+-- hash: 4bfeedb3f4cacaae48ffee4760509b6ae1dee39fa2f9bc0e523422b5b5650dde
 
 name:           topictap
 version:        1.0.0
@@ -23,12 +23,13 @@ extra-source-files:
 library
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings TupleSections
-  ghc-options: -Wall
+  default-extensions: BangPatterns DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable EmptyCase FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf OverloadedStrings RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       aeson
     , avro
     , base >=4.7 && <5
+    , base16-bytestring
     , base64-bytestring
     , bifunctors
     , bytestring
@@ -75,12 +76,13 @@ executable topictap
   main-is: Main.hs
   hs-source-dirs:
       app
-  default-extensions: OverloadedStrings TupleSections
-  ghc-options: -threaded -rtsopts -O2
+  default-extensions: BangPatterns DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable EmptyCase FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf OverloadedStrings RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections
+  ghc-options: -threaded -rtsopts -O2 -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       aeson
     , avro
     , base >=4.7 && <5
+    , base16-bytestring
     , bifunctors
     , bytestring
     , conduit
@@ -119,12 +121,13 @@ test-suite tests
   main-is: Spec.hs
   hs-source-dirs:
       tests
-  default-extensions: OverloadedStrings TupleSections
-  ghc-options: -Wall -threaded
+  default-extensions: BangPatterns DataKinds DefaultSignatures DeriveFoldable DeriveFunctor DeriveGeneric DeriveLift DeriveTraversable EmptyCase FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs LambdaCase MultiParamTypeClasses MultiWayIf OverloadedStrings RankNTypes ScopedTypeVariables StandaloneDeriving TupleSections
+  ghc-options: -Wall -threaded -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
   build-depends:
       aeson
     , avro
     , base >=4.7 && <5
+    , base16-bytestring
     , base64-bytestring
     , bifunctors
     , bytestring
