@@ -60,7 +60,7 @@ decodeMessage sr msg = do
                        , "timestamp"     .= unTimeStamp (crTimestamp msg)
                        , "partitionId"   .= unPartitionId (crPartition msg)
                        , "key"           .= (encodeBs <$> crKey msg)
-                       , "valueSchemaId" .= ((unSchemaId . fst) <$> res)
+                       , "valueSchemaId" .= (unSchemaId . fst <$> res)
                        , "value"         .= (snd <$> res)
                        ]
   return $ const payload <$> msg
