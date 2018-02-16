@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 module  App.Conduit.Time
 where
 
@@ -6,15 +7,18 @@ import Conduit
 import Data.Time.Clock       (UTCTime)
 import Data.Time.Clock.POSIX (getCurrentTime, utcTimeToPOSIXSeconds)
 
--- | Maps an effect every N seconds
--- and returns the result of the effect downstream.
--- Only one message per a given interval is taken into account,
--- other messages are filtered out and are not propagated downstream.
-intervalMapC :: MonadIO m
-             => Seconds
-             -> (UTCTime -> a -> m b)
-             -> Conduit a m b
-intervalMapC (Seconds sec) handle = go 0
+-- | Annotates every message with a timestamp.
+timedC :: MonadIO m
+       => Conduit a m (UTCTime, a)
+timedC = awaitForever $ \a ->
+  yieldM ((,a) <$> liftIO getCurrentTime)
+
+-- | Samples messages, one per a specified interval
+-- and annotates sampled messages with timestamps
+sampleC :: MonadIO m
+        => Seconds
+        -> Conduit a m (UTCTime, a)
+sampleC (Seconds sec) = go 0
   where
     go t = do
       mmsg <- await
@@ -22,7 +26,9 @@ intervalMapC (Seconds sec) handle = go 0
         Nothing -> pure ()
         Just msg -> do
           time <- liftIO getCurrentTime
-          let ct = round (utcTimeToPOSIXSeconds time)
-          if ct > t
-            then yieldM (handle time msg) >> go (ct + sec)
-            else go t
+          case round (utcTimeToPOSIXSeconds time) of
+            ct | t == 0 -> go (ct + sec)                      -- initial, returse to the next interval
+            ct | ct > t -> yield (time, msg) >> go (ct + sec) -- yield and returse to the next interval
+            _  -> go t                                        -- still sampling, recurse
+
+
