@@ -34,8 +34,8 @@ handleStream :: MonadApp m
 handleStream sr fp =
   mapMC (decodeMessage sr)
   .| effectC (writeDecodedMessage fp)
-  .| effectC (const (readCount += 1))
-  .| effectC (const (writeCount += 1))
+  .| effectC (const (stateReadCount += 1))
+  .| effectC (const (stateWriteCount += 1))
   .| mapC (const ())
 
 writeDecodedMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m ()
