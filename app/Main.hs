@@ -33,15 +33,15 @@ import qualified Data.Text as T
 
 reportProgress :: (MonadLogger m, MonadStats m, MonadState AppState m) => m ()
 reportProgress = do
-  reads' <- use readCount
-  writes <- use writeCount
+  reads' <- use stateReadCount
+  writes <- use stateWriteCount
   let drops = reads' - writes
   logInfo $ "Reads: " <> show reads' <> ", writes: " <> show writes
   sendMetric (addCounter (MetricName "scorefilter.read.count" ) id reads')
   sendMetric (addCounter (MetricName "scorefilter.write.count") id writes)
   sendMetric (addCounter (MetricName "scorefilter.drop.count") id drops)
-  readCount .= 0
-  writeCount .= 0
+  stateReadCount .= 0
+  stateWriteCount .= 0
 
 onRebalance :: (MonadLogger m, MonadThrow m, MonadIO m) => KafkaConsumer -> TopicName -> (S.Set PartitionId -> m a) -> ConduitM o o m ()
 onRebalance consumer topicName handleRebalance = go S.empty
