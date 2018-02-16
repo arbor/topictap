@@ -18,7 +18,7 @@ import Data.Maybe                           (catMaybes)
 import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro                           (schemaRegistry)
-import Kafka.Conduit.Sink                   hiding (logLevel)
+import Kafka.Conduit.Sink
 import Kafka.Conduit.Source
 import Network.StatsD                       as S
 import Service
