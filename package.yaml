@@ -84,6 +84,7 @@ library:
   - App.AppState
   - App.AWS.Env
   - App.AWS.S3
+  - App.Codec
   - App.Kafka
   - App.Options
   - App.ToSha256Text
