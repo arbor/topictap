@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fa1a5649ddb2055544d432ba846a888bca3f1622210ae4f9dc90f15a4ed2651c
+-- hash: fddd531ba71fcbda755556e2995853158b0bbbcdcd69800ede82870f2d0b5f45
 
 name:           topictap
 version:        1.0.0
@@ -81,6 +81,8 @@ library
       App.ToSha256Text
   other-modules:
       App.Orphans
+      App.Persist
+      DevApp
       Paths_topictap
   default-language: Haskell2010
 

@@ -2,13 +2,16 @@
 
 module App.AppState
   ( AppState(..)
+  , HasAppState(..)
+  , FileCache(..), HasFileCache(..)
+  , FileCacheEntry(..)
+  , fileCacheEmpty
+  , appStateEmpty
+
   , stateReadCount
   , stateWriteCount
   , stateFileCache
 
-  , appStateEmpty
-
-  , FileCacheEntry(..)
   , fceFileName
   , fceOffsetFirst
   , fceOffsetLast
@@ -16,7 +19,6 @@ module App.AppState
   , fcePartitionId
   , fceHandle
 
-  , FileCache(..)
   , fcEntries
   ) where
 
@@ -47,8 +49,14 @@ data AppState = AppState
   } deriving (Eq, Show)
 
 makeLenses ''FileCacheEntry
-makeLenses ''FileCache
-makeLenses ''AppState
+makeClassy ''FileCache
+makeClassy ''AppState
+
+instance HasFileCache AppState where
+  fileCache = stateFileCache
+
+fileCacheEmpty :: FileCache
+fileCacheEmpty = FileCache M.empty
 
 appStateEmpty :: AppState
-appStateEmpty = AppState 0 0 (FileCache M.empty)
+appStateEmpty = AppState 0 0 fileCacheEmpty
