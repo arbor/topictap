@@ -3,10 +3,12 @@
 module App.Options where
 
 import Control.Lens
-import Control.Monad.Logger (LogLevel (..))
-import Data.Semigroup       ((<>))
-import Network.Socket       (HostName)
-import Network.StatsD       (SampleRate (..))
+import Control.Monad.Logger  (LogLevel (..))
+import Data.Semigroup        ((<>))
+import Network.AWS.Data.Text (FromText (..), fromText)
+import Network.AWS.S3.Types  (BucketName, Region (..))
+import Network.Socket        (HostName)
+import Network.StatsD        (SampleRate (..))
 
 import Options.Applicative
 import Text.Read           (readEither)
@@ -41,12 +43,20 @@ data Options = Options
   , _optInputTopics      :: [TopicName]
   , _optOutputBucket     :: String
   , _optStagingDirectory :: String
+  , _optAwsConfig        :: AwsConfig
   , _optKafkaConfig      :: KafkaConfig
   , _optStatsConfig      :: StatsConfig
   } deriving (Show)
 
+data AwsConfig = AwsConfig
+  { _awsRegion     :: Region
+  , _binBucket     :: BucketName
+  , _uploadThreads :: Int
+  } deriving (Show)
+
 makeClassy ''KafkaConfig
 makeClassy ''StatsConfig
+makeClassy ''AwsConfig
 makeClassy ''Options
 
 instance HasKafkaConfig Options where
@@ -54,6 +64,9 @@ instance HasKafkaConfig Options where
 
 instance HasStatsConfig Options where
   statsConfig = optStatsConfig
+
+instance HasAwsConfig Options where
+  awsConfig = optAwsConfig
 
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig
@@ -128,32 +141,53 @@ kafkaConfigParser = KafkaConfig
       <>  help "Kafka consumer offsets commit period (in seconds)"
       )
 
+awsConfigParser :: Parser AwsConfig
+awsConfigParser = AwsConfig
+  <$> readOrFromTextOption
+      (  long "region"
+      <> metavar "AWS_REGION"
+      <> showDefault <> value Oregon
+      <> help "The AWS region in which to operate"
+      )
+  <*> readOrFromTextOption
+      (  long "bins-bucket"
+      <> metavar "BUCKET_NAME"
+      <> help "Bin files bucket name")
+  <*> readOption
+      (  long "upload-threads"
+      <> metavar "NUM_THREADS"
+      <> showDefault <> value 20
+      <> help "Number of parallel S3 operations"
+      )
+
 optParser :: Parser Options
 optParser = Options
   <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
-      (   long "log-level"
-      <>  metavar "LOG_LEVEL"
-      <>  showDefault <> value LevelInfo
-      <>  help "Log level"
+      (  long "log-level"
+      <> metavar "LOG_LEVEL"
+      <> showDefault <> value LevelInfo
+      <> help "Log level"
       )
   <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
   <*> strOption
-      (   long "output-bucket"
-      <>  metavar "BUCKET"
-      <>  help "Output bucket.  Data from input topics will be written to this bucket"
+      (  long "output-bucket"
+      <> metavar "BUCKET"
+      <> help "Output bucket.  Data from input topics will be written to this bucket"
       )
     <*> strOption
-      (   long "staging-directory"
-      <>  metavar "PATH"
-      <>  help "Staging directory where generated files are stored and scheduled for upload to S3"
+      (  long "staging-directory"
+      <> metavar "PATH"
+      <> help "Staging directory where generated files are stored and scheduled for upload to S3"
       )
+  <*> awsConfigParser
   <*> kafkaConfigParser
   <*> statsConfigParser
-  where topicOption = strOption
-          (  long "topic"
-          <> metavar "TOPIC"
-          <> help "Input topic.  Multiple topics can be supplied by repeating the flag or comma/space separating the topic names"
-          )
+  where
+    topicOption = strOption
+      (  long "topic"
+      <> metavar "TOPIC"
+      <> help "Input topic.  Multiple topics can be supplied by repeating the flag or comma/space separating the topic names"
+      )
 
 commaToSpace :: Char -> Char
 commaToSpace ',' = ' '
@@ -164,6 +198,11 @@ readOption = option $ eitherReader readEither
 
 readOptionMsg :: Read a => String -> Mod OptionFields a -> Parser a
 readOptionMsg msg = option $ eitherReader (either (Left . const msg) Right . readEither)
+
+readOrFromTextOption :: (Read a, FromText a) => Mod OptionFields a -> Parser a
+readOrFromTextOption =
+  let fromStr s = readEither s <|> fromText (T.pack s)
+  in option $ eitherReader fromStr
 
 string2Tags :: String -> [StatsTag]
 string2Tags s = StatsTag . splitTag <$> splitTags
