@@ -2,12 +2,13 @@
 
 module App.AppState
   ( AppState(..)
-  , appStateEmpty
-
   , stateReadCount
   , stateWriteCount
   , stateFileCache
 
+  , appStateEmpty
+
+  , FileCacheEntry(..)
   , fceFileName
   , fceOffsetFirst
   , fceOffsetLast
@@ -15,6 +16,7 @@ module App.AppState
   , fcePartitionId
   , fceHandle
 
+  , FileCache(..)
   , fcEntries
   ) where
 
