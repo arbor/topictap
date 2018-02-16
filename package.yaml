@@ -86,11 +86,15 @@ library:
   - App.AppState
   - App.AWS.Env
   - App.AWS.S3
+  - App.CancellationToken
   - App.Codec
+  - App.Conduit.Time
   - App.Kafka
   - App.Options
+  - App.Persist
   - App.Service
   - App.ToSha256Text
+  - App.Types
   dependencies:
   - base64-bytestring
   - conduit-combinators

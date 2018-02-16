@@ -19,7 +19,7 @@ import Data.Map                      as M
 import Data.Monoid                   ((<>))
 import Data.Text                     as T
 import Data.Time.Clock               (UTCTime)
-import Data.Time.Clock.POSIX         (getCurrentTime, utcTimeToPOSIXSeconds)
+import Data.Time.Clock.POSIX         (utcTimeToPOSIXSeconds)
 import GHC.Int                       (Int64)
 import Kafka.Consumer                (Offset (..), PartitionId (..), TopicName (..))
 import Network.AWS                   (HasEnv, MonadAWS, runAWS)
@@ -35,9 +35,9 @@ import qualified Data.ByteString.Lazy  as LBS
 -- The FileCache will be emptied in State.
 uploadAllFiles :: (MonadState s m, HasFileCache s, MonadReader r m, HasAwsConfig r, HasEnv r, MonadAWS m)
                => CancellationToken
+               -> UTCTime
                -> m ()
-uploadAllFiles ctoken = do
-  timestamp <- liftIO getCurrentTime
+uploadAllFiles ctoken timestamp = do
   cache     <- use fileCache
   entries   <- liftIO $ traverse (closeEntry . snd) (cache ^. fcEntries & M.toList)
   uploadFiles ctoken timestamp entries

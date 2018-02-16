@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: df7c70ea7ca32f9f47b83009cf823f9e3e99cfaeb2cf4ed1a40158e5616dec21
+-- hash: 1fe364b83d78ac86c0ece1d739d3d2f5570ffbbade0eca1908c3c0b82c61b3a8
 
 name:           topictap
 version:        1.0.0
@@ -76,15 +76,17 @@ library
       App.AppState
       App.AWS.Env
       App.AWS.S3
+      App.CancellationToken
       App.Codec
+      App.Conduit.Time
       App.Kafka
       App.Options
+      App.Persist
       App.Service
       App.ToSha256Text
+      App.Types
   other-modules:
-      App.CancellationToken
       App.Orphans
-      App.Persist
       DevApp
       Paths_topictap
   default-language: Haskell2010
