@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 14cb1d81b4c7010704253c09525174ab213e48df69497181882ec0b0103ad61b
+-- hash: 2e8cac5b231386ce7d5a9ea4660a6c6efe375502008a0f1338d5f6fddbfa78c9
 
 name:           topictap
 version:        1.0.0
@@ -74,6 +74,7 @@ library
       App.AppState
       App.AWS.Env
       App.AWS.S3
+      App.Codec
       App.Kafka
       App.Options
       App.ToSha256Text
