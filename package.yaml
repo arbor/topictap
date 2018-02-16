@@ -42,6 +42,7 @@ dependencies:
 - bytestring
 - conduit
 - containers
+- cryptohash
 - datadog
 - directory
 - exceptions
@@ -77,6 +78,7 @@ library:
   - App.AppState
   - App.Kafka
   - App.Options
+  - App.ToSha256Text
   dependencies:
   - base64-bytestring
   - conduit-combinators

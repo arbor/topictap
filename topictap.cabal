@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4bfeedb3f4cacaae48ffee4760509b6ae1dee39fa2f9bc0e523422b5b5650dde
+-- hash: 6f4a98aeda43c55433dea4a57018c156c821624b16273823e89eeb94d36340da
 
 name:           topictap
 version:        1.0.0
@@ -36,6 +36,7 @@ library
     , conduit
     , conduit-combinators
     , containers
+    , cryptohash
     , datadog
     , directory
     , exceptions
@@ -68,6 +69,7 @@ library
       App.AppState
       App.Kafka
       App.Options
+      App.ToSha256Text
   other-modules:
       Paths_topictap
   default-language: Haskell2010
@@ -88,6 +90,7 @@ executable topictap
     , conduit
     , conduit-combinators
     , containers
+    , cryptohash
     , datadog
     , directory
     , exceptions
@@ -133,6 +136,7 @@ test-suite tests
     , bytestring
     , conduit
     , containers
+    , cryptohash
     , datadog
     , directory
     , exceptions
