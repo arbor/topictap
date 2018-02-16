@@ -76,6 +76,7 @@ library:
   - App.AppError
   - App.AppEnv
   - App.AppState
+  - App.Codec
   - App.Kafka
   - App.Options
   - App.ToSha256Text
