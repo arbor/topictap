@@ -11,14 +11,10 @@ module App.AWS.S3
 
 import Control.Lens
 import Control.Monad
-import Control.Monad.Catch          (catch)
-import Control.Monad.Trans.AWS      hiding (send)
-import Control.Monad.Trans.Resource
-import Data.ByteString.Lazy         (ByteString, empty)
-import Data.Conduit.Binary          (sinkLbs)
-import Data.Monoid                  ((<>))
-import Data.Text                    (unpack)
-import Network.AWS                  (MonadAWS, send)
+import Control.Monad.Trans.AWS hiding (send)
+import Data.Monoid             ((<>))
+import Data.Text               (unpack)
+import Network.AWS             (MonadAWS, send)
 import Network.AWS.Data
 import Network.AWS.S3
 
