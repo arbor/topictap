@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module Service
+module App.Service
   ( handleStream
   , mkObjectKey
   ) where

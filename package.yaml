@@ -87,6 +87,7 @@ library:
   - App.Codec
   - App.Kafka
   - App.Options
+  - App.Service
   - App.ToSha256Text
   dependencies:
   - base64-bytestring
