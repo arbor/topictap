@@ -49,12 +49,14 @@ decodeMessage sr msg = do
   (sid, val) <- decodeWithSchema2 sr (fromStrict v) >>= throwAs DecodeErr
   let payload = object [ "offset"        .= unOffset (crOffset msg)
                        , "timestamp"     .= unTimeStamp (crTimestamp msg)
+                       , "partitionId"   .= unPartitionId (crPartition msg)
                        , "key"           .= encodeBs (crKey msg)
                        , "valueSchemaId" .= unSchemaId sid
                        , "value"         .= val
                        ]
   return $ const payload <$> msg
   where
+    unPartitionId (PartitionId v) = v
     unSchemaId (SchemaId v) = v
     unOffset (Offset v) = v
     unTimeStamp = \case
