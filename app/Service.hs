@@ -4,14 +4,17 @@
 
 module Service
   ( handleStream
+  , mkObjectKey
   ) where
 
 import App
+import App.ToSha256Text
 import Conduit
 import Control.Arrow                        (left)
 import Control.Lens                         ((+=), (<&>))
 import Control.Monad.Catch                  (MonadThrow)
 import Control.Monad.IO.Class               (MonadIO)
+import Data.Aeson                           (object, (.=))
 import Data.Avro.Schema                     ()
 import Data.Avro.Types                      ()
 import Data.ByteString                      (ByteString)
@@ -21,14 +24,13 @@ import HaskellWorks.Data.Conduit.Combinator
 import Kafka.Avro
 import Kafka.Conduit.Source
 
-import Data.Aeson (object, (.=))
-
 import qualified Data.Aeson             as J
 import qualified Data.Avro.Decode       as A
 import qualified Data.Avro.Schema       as A
 import qualified Data.Avro.Types        as A
 import qualified Data.ByteString.Base16 as Base16
 import qualified Data.ByteString.Lazy   as LBS
+import qualified Data.Text              as T
 import qualified Data.Text.Encoding     as T
 
 -- | Handles the stream of incoming messages.
@@ -51,7 +53,7 @@ decodeMessage sr msg = do
   let payload = object [ "offset"        .= unOffset (crOffset msg)
                        , "timestamp"     .= unTimeStamp (crTimestamp msg)
                        , "partitionId"   .= unPartitionId (crPartition msg)
-                       , "key"           .= (encodeBs <$> (crKey msg))
+                       , "key"           .= (encodeBs <$> crKey msg)
                        , "valueSchemaId" .= ((unSchemaId . fst) <$> res)
                        , "value"         .= (snd <$> res)
                        ]
@@ -67,10 +69,15 @@ decodeMessage sr msg = do
       NoTimestamp              -> Nothing
     encodeBs bs = "\\u" <> T.decodeUtf8 (Base16.encode bs)
 
+mkObjectKey :: TopicName -> Timestamp -> PartitionId -> ByteString -> T.Text
+mkObjectKey (TopicName topicName) currentTime (PartitionId partitionId) bs = toSha256Text path <> "/" <> path
+    where contentHash = toSha256Text bs
+          path        = T.pack topicName <> "/" <> T.pack (show partitionId) <> "/" <> T.pack (show currentTime) <> "-" <> contentHash <> ".json"
+
 decodeAvro :: MonadIO m
-           => SchemaRegistry
-           -> LBS.ByteString
-           -> m (Either DecodeError (SchemaId, A.Value A.Type))
+        => SchemaRegistry
+        -> LBS.ByteString
+        -> m (Either DecodeError (SchemaId, A.Value A.Type))
 decodeAvro sr bs =
   case schemaData of
     Left err -> return $ Left err
