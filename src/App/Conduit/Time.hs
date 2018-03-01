@@ -27,8 +27,8 @@ sampleC (Seconds sec) = go 0
         Just msg -> do
           time <- liftIO getCurrentTime
           case round (utcTimeToPOSIXSeconds time) of
-            ct | t == 0 -> go (ct + sec)                      -- initial, returse to the next interval
-            ct | ct > t -> yield (time, msg) >> go (ct + sec) -- yield and returse to the next interval
+            ct | t == 0 -> go (ct + sec)                      -- initial, recurse to the next interval
+            ct | ct > t -> yield (time, msg) >> go (ct + sec) -- yield and recurse to the next interval
             _  -> go t                                        -- still sampling, recurse
 
 
