@@ -3,7 +3,7 @@ MAINTAINER Tyler Durden <mayhem@arbor.net>
 
 ADD docker/set-environment.sh /usr/local/bin/set-environment
 
-RUN apt-get update && apt-get install -y jq libgmp10 libsnappy1v5 libssl1.0.0 iproute && \
+RUN apt-get update && apt-get install -y jq libgmp10 libsnappy1v5 libssl1.0.0 iproute netbase ca-certificates && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 COPY .librdkafka/ /usr/

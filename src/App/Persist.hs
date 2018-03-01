@@ -6,7 +6,7 @@ where
 
 import App.AppState
 import App.AWS.S3                    (putFile)
-import App.Options                   (HasAwsConfig, awsConfig, storeBucket, uploadThreads)
+import App.Options                   (HasAwsConfig, awsConfig, uploadThreads)
 import App.ToSha256Text              (toSha256Text)
 import Control.Concurrent.Async.Pool (mapTasks, withTaskGroup)
 import Control.Lens                  (use, view, (&), (.=), (^.))
@@ -34,30 +34,31 @@ import qualified Data.ByteString.Lazy  as LBS
 -- The file handles will be closed and files must not be used after this function returns.
 -- The FileCache will be emptied in State.
 uploadAllFiles :: (MonadState s m, HasFileCache s, MonadReader r m, HasAwsConfig r, HasEnv r, MonadAWS m)
-               => CancellationToken
+               => BucketName
+               -> CancellationToken
                -> UTCTime
                -> m ()
-uploadAllFiles ctoken timestamp = do
+uploadAllFiles bkt ctoken timestamp = do
   cache     <- use fileCache
   entries   <- liftIO $ traverse (closeEntry . snd) (cache ^. fcEntries & M.toList)
-  uploadFiles ctoken timestamp entries
+  uploadFiles bkt ctoken timestamp entries
   fileCache .= fileCacheEmpty
   where
     closeEntry e = e ^. fceHandle & hClose >> pure e
 
 uploadFiles :: (HasEnv r, MonadReader r m, HasAwsConfig r, MonadAWS m)
-            => CancellationToken
+            => BucketName
+            -> CancellationToken
             -> UTCTime
             -> [FileCacheEntry]
             -> m ()
-uploadFiles ctoken timestamp fs = do
+uploadFiles bkt ctoken timestamp fs = do
   aws <- ask
-  bkt <- view (awsConfig . storeBucket)
   par <- view (awsConfig . uploadThreads)
-  liftIO . void $ mapConcurrently' par (go aws bkt) fs
+  liftIO . void $ mapConcurrently' par (go aws) fs
   liftIO $ print fs
   where
-    go e bkt file = do
+    go e file = do
       ctStatus <- CToken.status ctoken
       unless (ctStatus == CToken.Cancelled) $
         runResourceT $ runAWS e (uploadFile bkt timestamp file)
