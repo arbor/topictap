@@ -7,7 +7,5 @@ echo "Starting service"
 export GATEWAY_IP=$(ip route | grep default | cut -d ' ' -f 3)
 export STATSD_HOST=${STATSD_HOST:-$GATEWAY_IP}
 
-/usr/local/bin/set-environment
-
 set -x
 topictap "$@"
