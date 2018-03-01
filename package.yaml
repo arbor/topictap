@@ -39,6 +39,7 @@ dependencies:
 - amazonka
 - amazonka-core
 - amazonka-s3
+- async-pool
 - avro
 - base16-bytestring
 - bifunctors
@@ -65,6 +66,7 @@ dependencies:
 - network
 - random
 - resourcet
+- time
 - text
 - transformers
 - transformers-base
@@ -84,11 +86,15 @@ library:
   - App.AppState
   - App.AWS.Env
   - App.AWS.S3
+  - App.CancellationToken
   - App.Codec
+  - App.Conduit.Time
   - App.Kafka
   - App.Options
+  - App.Persist
   - App.Service
   - App.ToSha256Text
+  - App.Types
   dependencies:
   - base64-bytestring
   - conduit-combinators

@@ -8,10 +8,6 @@ module App.AppState
   , fileCacheEmpty
   , appStateEmpty
 
-  , stateReadCount
-  , stateWriteCount
-  , stateFileCache
-
   , fceFileName
   , fceOffsetFirst
   , fceOffsetLast
@@ -19,7 +15,6 @@ module App.AppState
   , fcePartitionId
   , fceHandle
 
-  , fcEntries
   ) where
 
 import Control.Lens
@@ -43,9 +38,9 @@ newtype FileCache = FileCache
   } deriving (Eq, Show)
 
 data AppState = AppState
-  { _stateReadCount  :: Int
-  , _stateWriteCount :: Int
-  , _stateFileCache  :: FileCache
+  { _stateMsgReadCount  :: Int
+  , _stateMsgWriteCount :: Int
+  , _stateFileCache     :: FileCache
   } deriving (Eq, Show)
 
 makeLenses ''FileCacheEntry

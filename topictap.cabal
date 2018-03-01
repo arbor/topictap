@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fddd531ba71fcbda755556e2995853158b0bbbcdcd69800ede82870f2d0b5f45
+-- hash: 1fe364b83d78ac86c0ece1d739d3d2f5570ffbbade0eca1908c3c0b82c61b3a8
 
 name:           topictap
 version:        1.0.0
@@ -30,6 +30,7 @@ library
     , amazonka
     , amazonka-core
     , amazonka-s3
+    , async-pool
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -62,6 +63,7 @@ library
     , resourcet
     , split
     , text
+    , time
     , transformers
     , transformers-base
   if os(osx)
@@ -74,14 +76,17 @@ library
       App.AppState
       App.AWS.Env
       App.AWS.S3
+      App.CancellationToken
       App.Codec
+      App.Conduit.Time
       App.Kafka
       App.Options
+      App.Persist
       App.Service
       App.ToSha256Text
+      App.Types
   other-modules:
       App.Orphans
-      App.Persist
       DevApp
       Paths_topictap
   default-language: Haskell2010
@@ -97,6 +102,7 @@ executable topictap
     , amazonka
     , amazonka-core
     , amazonka-s3
+    , async-pool
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -127,6 +133,7 @@ executable topictap
     , random
     , resourcet
     , text
+    , time
     , topictap
     , transformers
     , transformers-base
@@ -148,6 +155,7 @@ test-suite tests
     , amazonka
     , amazonka-core
     , amazonka-s3
+    , async-pool
     , avro
     , base >=4.7 && <5
     , base16-bytestring
@@ -182,6 +190,7 @@ test-suite tests
     , random
     , resourcet
     , text
+    , time
     , topictap
     , transformers
     , transformers-base

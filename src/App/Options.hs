@@ -2,6 +2,7 @@
 
 module App.Options where
 
+import App.Types             (Seconds (..))
 import Control.Lens
 import Control.Monad.Logger  (LogLevel (..))
 import Data.Semigroup        ((<>))
@@ -43,6 +44,7 @@ data Options = Options
   , _optInputTopics      :: [TopicName]
   , _optOutputBucket     :: String
   , _optStagingDirectory :: String
+  , _optUploadInterval   :: Seconds
   , _optAwsConfig        :: AwsConfig
   , _optKafkaConfig      :: KafkaConfig
   , _optStatsConfig      :: StatsConfig
@@ -50,7 +52,7 @@ data Options = Options
 
 data AwsConfig = AwsConfig
   { _awsRegion     :: Region
-  , _binBucket     :: BucketName
+  , _storeBucket   :: BucketName
   , _uploadThreads :: Int
   } deriving (Show)
 
@@ -150,9 +152,9 @@ awsConfigParser = AwsConfig
       <> help "The AWS region in which to operate"
       )
   <*> readOrFromTextOption
-      (  long "bins-bucket"
+      (  long "store-bucket"
       <> metavar "BUCKET_NAME"
-      <> help "Bin files bucket name")
+      <> help "Store bucket name")
   <*> readOption
       (  long "upload-threads"
       <> metavar "NUM_THREADS"
@@ -174,10 +176,16 @@ optParser = Options
       <> metavar "BUCKET"
       <> help "Output bucket.  Data from input topics will be written to this bucket"
       )
-    <*> strOption
+  <*> strOption
       (  long "staging-directory"
       <> metavar "PATH"
       <> help "Staging directory where generated files are stored and scheduled for upload to S3"
+      )
+  <*> ( Seconds <$> readOption
+        (  long "upload-interval"
+        <> metavar "SECONDS"
+        <> help "Interval in seconds to upload files to S3"
+        )
       )
   <*> awsConfigParser
   <*> kafkaConfigParser

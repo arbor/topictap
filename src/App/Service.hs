@@ -35,10 +35,11 @@ handleStream :: MonadApp m
              => SchemaRegistry
              -> FilePath
              -> Conduit (ConsumerRecord (Maybe ByteString) (Maybe ByteString)) m ()
-handleStream sr fp = mapMC (decodeMessage sr)
+handleStream sr fp =
+     effectC (const (stateMsgReadCount += 1))
+  .| mapMC (decodeMessage sr)
   .| effectC (writeDecodedMessage fp)
-  .| effectC (const (stateReadCount += 1))
-  .| effectC (const (stateWriteCount += 1))
+  .| effectC (const (stateMsgWriteCount += 1))
   .| mapC (const ())
 
 handleForMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m Handle

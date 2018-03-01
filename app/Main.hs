@@ -9,7 +9,10 @@ module Main
 
 import App
 import App.AWS.Env
+import App.CancellationToken                (newCancellationToken)
+import App.Conduit.Time
 import App.Kafka
+import App.Persist
 import App.Service
 import Arbor.Logger
 import Conduit
@@ -36,15 +39,15 @@ import qualified Data.Text as T
 
 reportProgress :: (MonadLogger m, MonadStats m, MonadState AppState m) => m ()
 reportProgress = do
-  reads' <- use stateReadCount
-  writes <- use stateWriteCount
+  reads' <- use stateMsgReadCount
+  writes <- use stateMsgWriteCount
   let drops = reads' - writes
   logInfo $ "Reads: " <> show reads' <> ", writes: " <> show writes
   sendMetric (addCounter (MetricName "scorefilter.read.count" ) id reads')
   sendMetric (addCounter (MetricName "scorefilter.write.count") id writes)
   sendMetric (addCounter (MetricName "scorefilter.drop.count") id drops)
-  stateReadCount .= 0
-  stateWriteCount .= 0
+  stateMsgReadCount .= 0
+  stateMsgWriteCount .= 0
 
 onRebalance :: (MonadLogger m, MonadThrow m, MonadIO m) => KafkaConsumer -> TopicName -> (S.Set PartitionId -> m a) -> ConduitM o o m ()
 onRebalance consumer topicName handleRebalance = go S.empty
@@ -71,6 +74,8 @@ main = do
   let logLvl    = opt ^. optLogLevel
   let kafkaConf = opt ^. optKafkaConfig
   let statsConf = opt ^. optStatsConfig
+
+  ctoken <- newCancellationToken
 
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
@@ -108,7 +113,8 @@ main = do
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))
-          .| everyNSeconds (kafkaConf ^. commitPeriodSec)  -- only commit ever N seconds, so we don't hammer Kafka.
+          .| sampleC (opt ^. optUploadInterval)
+          .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' reportProgress
           .| commitOffsetsSink consumer
 
