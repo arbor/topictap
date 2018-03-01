@@ -42,8 +42,8 @@ data StatsConfig = StatsConfig
 data Options = Options
   { _optLogLevel         :: LogLevel
   , _optInputTopics      :: [TopicName]
-  , _optOutputBucket     :: String
-  , _optStagingDirectory :: String
+  , _optOutputBucket     :: BucketName
+  , _optStagingDirectory :: FilePath
   , _optUploadInterval   :: Seconds
   , _optAwsConfig        :: AwsConfig
   , _optKafkaConfig      :: KafkaConfig
@@ -52,7 +52,6 @@ data Options = Options
 
 data AwsConfig = AwsConfig
   { _awsRegion     :: Region
-  , _storeBucket   :: BucketName
   , _uploadThreads :: Int
   } deriving (Show)
 
@@ -151,10 +150,6 @@ awsConfigParser = AwsConfig
       <> showDefault <> value Oregon
       <> help "The AWS region in which to operate"
       )
-  <*> readOrFromTextOption
-      (  long "store-bucket"
-      <> metavar "BUCKET_NAME"
-      <> help "Store bucket name")
   <*> readOption
       (  long "upload-threads"
       <> metavar "NUM_THREADS"
@@ -171,7 +166,7 @@ optParser = Options
       <> help "Log level"
       )
   <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
-  <*> strOption
+  <*> readOrFromTextOption
       (  long "output-bucket"
       <> metavar "BUCKET"
       <> help "Output bucket.  Data from input topics will be written to this bucket"

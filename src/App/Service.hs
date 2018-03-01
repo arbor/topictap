@@ -2,12 +2,10 @@
 
 module App.Service
   ( handleStream
-  , mkObjectKey
   ) where
 
 import App
 import App.Codec
-import App.ToSha256Text
 import Conduit
 import Control.Lens
 import Control.Monad.State.Class
@@ -26,7 +24,6 @@ import qualified Data.Aeson.Text         as JT
 import qualified Data.ByteString         as BS
 import qualified Data.ByteString.Lazy    as LBS
 import qualified Data.Map                as M
-import qualified Data.Text               as T
 import qualified Data.Text.Lazy.Encoding as LT
 import qualified System.Directory        as D
 
@@ -46,7 +43,7 @@ handleForMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteStrin
 handleForMessage parentPath msg = do
   s <- get
 
-  case M.lookup (crTopic msg, crPartition msg) (s ^. stateFileCache ^. fcEntries) of
+  case M.lookup (crTopic msg, crPartition msg) (s ^. stateFileCache . fcEntries) of
     Just entry -> do
       put $ s & stateFileCache . fcEntries %~ M.insert (crTopic msg, crPartition msg) (entry & fceOffsetLast .~ crOffset msg)
       return $ entry ^. fceHandle
@@ -72,12 +69,3 @@ writeDecodedMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteSt
 writeDecodedMessage parentPath msg = do
   h <- handleForMessage parentPath msg
   liftIO $ LBS.hPut h (LT.encodeUtf8 (JT.encodeToLazyText (crValue msg)))
-
-mkDirFilename :: TopicName -> PartitionId -> (T.Text, T.Text)
-mkDirFilename (TopicName topicName) (PartitionId partitionId) = (path, T.pack (show partitionId) <> "/" <> ".json")
-    where path = T.pack topicName
-
-mkObjectKey :: TopicName -> Timestamp -> PartitionId -> ByteString -> T.Text
-mkObjectKey (TopicName topicName) currentTime (PartitionId partitionId) bs = toSha256Text path <> "/" <> path
-    where contentHash = toSha256Text bs
-          path        = T.pack topicName <> "/" <> T.pack (show partitionId) <> "/" <> T.pack (show currentTime) <> "-" <> contentHash <> ".json"
