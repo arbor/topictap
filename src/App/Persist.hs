@@ -75,7 +75,7 @@ uploadFile bkt timestamp entry = do
 
 mkS3Path :: UTCTime -> FileCacheEntry -> IO ObjectKey
 mkS3Path t e = do
-  hash <- md5File (e ^. fceFileName)
+  hash <- toSha256Text <$> LBS.readFile (e ^. fceFileName)
   let TopicName topicName = e ^. fceTopicName
   let PartitionId pid     = e ^. fcePartitionId
   let Offset firstOffset  = e ^. fceOffsetFirst
@@ -90,9 +90,6 @@ mkS3Path t e = do
                                     , hash
                                     ] <> ".json.gz"
   pure $ ObjectKey $ fullDir <> "/" <> fileName
-
-md5File :: FilePath -> IO Text
-md5File f = toSha256Text <$> LBS.readFile f
 
 mapConcurrently' :: Traversable t => Int -> (b -> IO a) -> t b -> IO (t a)
 mapConcurrently' n f args = withTaskGroup n $ \tg ->
