@@ -115,13 +115,12 @@ registerFile table time entry location = do
   let PartitionId pid     = entry ^. fcePartitionId
   let Offset firstOffset  = entry ^. fceOffsetFirst
   let Offset lastOffset   = entry ^. fceOffsetLast
-  let timestamp = round $ utcTimeToPOSIXSeconds time :: Int64
 
   let row = Map.fromList
             [ ("TopicPartition",  attributeValue & avS ?~ (toText topicName <> ":" <> toText pid))
             , ("Topic",           attributeValue & avS ?~ toText topicName)
             , ("PartitionId",     attributeValue & avN ?~ toText pid)
-            , ("Timestamp",       attributeValue & avN ?~ toText timestamp)
+            , ("Timestamp",       attributeValue & avS ?~ toText (show time))
             , ("OffsetFirst",     attributeValue & avN ?~ toText firstOffset)
             , ("OffsetLast",      attributeValue & avS ?~ toText lastOffset)
             , ("LocationUri",     attributeValue & avS ?~ toText location)
