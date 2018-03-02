@@ -39,6 +39,7 @@ dependencies:
 - amazonka
 - amazonka-core
 - amazonka-s3
+- amazonka-dynamodb
 - async-pool
 - avro
 - base16-bytestring
@@ -70,6 +71,7 @@ dependencies:
 - text
 - transformers
 - transformers-base
+- unordered-containers
 library:
   source-dirs: src
   ghc-options:

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1fe364b83d78ac86c0ece1d739d3d2f5570ffbbade0eca1908c3c0b82c61b3a8
+-- hash: 358d0c50da66424c35905e29c3f1b7cae1b545bbbf87c795504eaf82104b31f1
 
 name:           topictap
 version:        1.0.0
@@ -29,6 +29,7 @@ library
       aeson
     , amazonka
     , amazonka-core
+    , amazonka-dynamodb
     , amazonka-s3
     , async-pool
     , avro
@@ -66,6 +67,7 @@ library
     , time
     , transformers
     , transformers-base
+    , unordered-containers
   if os(osx)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
   exposed-modules:
@@ -86,6 +88,7 @@ library
       App.ToSha256Text
       App.Types
   other-modules:
+      App.AWS.DynamoDB
       App.Orphans
       DevApp
       Paths_topictap
@@ -101,6 +104,7 @@ executable topictap
       aeson
     , amazonka
     , amazonka-core
+    , amazonka-dynamodb
     , amazonka-s3
     , async-pool
     , avro
@@ -137,6 +141,7 @@ executable topictap
     , topictap
     , transformers
     , transformers-base
+    , unordered-containers
   if os(osx)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
   other-modules:
@@ -154,6 +159,7 @@ test-suite tests
       aeson
     , amazonka
     , amazonka-core
+    , amazonka-dynamodb
     , amazonka-s3
     , async-pool
     , avro
@@ -194,6 +200,7 @@ test-suite tests
     , topictap
     , transformers
     , transformers-base
+    , unordered-containers
   if os(osx)
     cpp-options: -D__attribute__(A)= -D_Nullable= -D_Nonnull=
   other-modules:

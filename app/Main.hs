@@ -85,6 +85,7 @@ main = do
       void . runApplication envApp $ do
         let inputTopics       = opt ^. optInputTopics
         let outputBucket      = opt ^. optOutputBucket
+        let indexTable        = opt ^. optIndexTable
         let stagingDirectory  = opt ^. optStagingDirectory
 
         logInfo "Creating Kafka Consumer on the following topics:"
@@ -114,7 +115,7 @@ main = do
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))
           .| sampleC (opt ^. optUploadInterval)
-          .| effectC (\(t, _) -> uploadAllFiles outputBucket ctoken t)
+          .| effectC (\(t, _) -> uploadAllFiles outputBucket indexTable ctoken t)
           .| effectC' reportProgress
           .| commitOffsetsSink consumer
 

@@ -2,6 +2,7 @@
 
 module App.Options where
 
+import App.AWS.DynamoDB      (TableName)
 import App.Types             (Seconds (..))
 import Control.Lens
 import Control.Monad.Logger  (LogLevel (..))
@@ -43,6 +44,7 @@ data Options = Options
   { _optLogLevel         :: LogLevel
   , _optInputTopics      :: [TopicName]
   , _optOutputBucket     :: BucketName
+  , _optIndexTable       :: TableName
   , _optStagingDirectory :: FilePath
   , _optUploadInterval   :: Seconds
   , _optAwsConfig        :: AwsConfig
@@ -171,6 +173,11 @@ optParser = Options
       <> metavar "BUCKET"
       <> help "Output bucket.  Data from input topics will be written to this bucket"
       )
+  <*> fromTextOption
+      (  long "index-table"
+      <> metavar "TABLE_NAME"
+      <> help "The name of the DynamoDB table to store the index"
+      )
   <*> strOption
       (  long "staging-directory"
       <> metavar "PATH"
@@ -201,6 +208,9 @@ readOption = option $ eitherReader readEither
 
 readOptionMsg :: Read a => String -> Mod OptionFields a -> Parser a
 readOptionMsg msg = option $ eitherReader (either (Left . const msg) Right . readEither)
+
+fromTextOption :: (FromText a) => Mod OptionFields a -> Parser a
+fromTextOption = option $ eitherReader (fromText . T.pack)
 
 readOrFromTextOption :: (Read a, FromText a) => Mod OptionFields a -> Parser a
 readOrFromTextOption =
