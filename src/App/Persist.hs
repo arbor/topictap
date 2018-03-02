@@ -62,7 +62,6 @@ uploadFiles ctoken timestamp fs = do
   tbl <- view storeIndex
   par <- view (awsConfig . uploadThreads)
   liftIO . void $ mapConcurrently' par (go aws bkt tbl) fs
-  liftIO $ print fs
   where
     go e b t file = do
       ctStatus <- CToken.status ctoken
