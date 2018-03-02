@@ -1,13 +1,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module App.Persist
-( uploadAllFiles
-)
-where
+  ( uploadAllFiles
+  ) where
 
 import App.AppState
 import App.AWS.DynamoDB
 import App.AWS.S3                    (S3Location (..), putFile)
-import App.Options                   (HasAwsConfig (..), HasStoreConfig (..))
+import App.CancellationToken         (CancellationToken)
+import App.Options                   (HasAwsConfig (..), HasStoreConfig (..), awsConfig, uploadThreads)
 import App.ToSha256Text              (toSha256Text)
 import Control.Concurrent.Async.Pool (mapTasks, withTaskGroup)
 import Control.Lens                  (use, view, (&), (.=), (?~), (^.))
@@ -26,12 +26,11 @@ import Kafka.Consumer                (Offset (..), PartitionId (..), TopicName (
 import Network.AWS                   (HasEnv, MonadAWS, runAWS)
 import Network.AWS.Data              (toText)
 import Network.AWS.S3.Types          (BucketName (..), ObjectKey (..))
-import System.IO                     (hClose)
 
-import           App.CancellationToken (CancellationToken)
 import qualified App.CancellationToken as CToken
 import qualified Data.ByteString.Lazy  as LBS
 import qualified Data.HashMap.Strict   as Map
+import qualified System.IO.Streams     as IO
 
 -- | Uploads all files from FileCache (from State) to S3.
 -- The file handles will be closed and files must not be used after this function returns.
@@ -47,8 +46,7 @@ uploadAllFiles ctoken timestamp = do
   entries   <- liftIO $ traverse (closeEntry . snd) (cache ^. fcEntries & M.toList)
   uploadFiles ctoken timestamp entries
   fileCache .= fileCacheEmpty
-  where
-    closeEntry e = e ^. fceHandle & hClose >> pure e
+  where closeEntry e = IO.write Nothing (e ^. fceOutputStream) >> pure e
 
 uploadFiles :: ( MonadAWS m, HasEnv r
                , MonadReader r m, HasAwsConfig r, HasStoreConfig r)

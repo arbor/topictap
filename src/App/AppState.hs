@@ -13,35 +13,36 @@ module App.AppState
   , fceOffsetLast
   , fceTopicName
   , fcePartitionId
-  , fceHandle
+  , fceOutputStream
 
   ) where
 
 import Control.Lens
 import Kafka.Consumer.Types
 import Kafka.Types
-import System.IO
 
-import qualified Data.Map as M
+import qualified Data.ByteString   as BS
+import qualified Data.Map          as M
+import qualified System.IO.Streams as IO
 
 data FileCacheEntry = FileCacheEntry
-  { _fceFileName    :: FilePath
-  , _fceOffsetFirst :: Offset
-  , _fceOffsetLast  :: Offset
-  , _fceTopicName   :: TopicName
-  , _fcePartitionId :: PartitionId
-  , _fceHandle      :: Handle
-  } deriving (Eq, Show)
+  { _fceFileName     :: FilePath
+  , _fceOffsetFirst  :: Offset
+  , _fceOffsetLast   :: Offset
+  , _fceTopicName    :: TopicName
+  , _fcePartitionId  :: PartitionId
+  , _fceOutputStream :: IO.OutputStream BS.ByteString
+  }
 
 newtype FileCache = FileCache
   { _fcEntries :: M.Map (TopicName, PartitionId) FileCacheEntry
-  } deriving (Eq, Show)
+  }
 
 data AppState = AppState
   { _stateMsgReadCount  :: Int
   , _stateMsgWriteCount :: Int
   , _stateFileCache     :: FileCache
-  } deriving (Eq, Show)
+  }
 
 makeLenses ''FileCacheEntry
 makeClassy ''FileCache

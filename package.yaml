@@ -60,6 +60,7 @@ dependencies:
 - hw-kafka-avro
 - hw-kafka-client
 - hw-kafka-conduit
+- io-streams
 - lens
 - monad-control
 - monad-logger
@@ -67,8 +68,8 @@ dependencies:
 - network
 - random
 - resourcet
-- time
 - text
+- time
 - transformers
 - transformers-base
 - unordered-containers
