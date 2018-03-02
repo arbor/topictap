@@ -110,7 +110,7 @@ main = do
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))
-          .| sampleC (opt ^. optUploadInterval)
+          .| sampleC (opt ^. storeUploadInterval)
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' reportProgress
           .| commitOffsetsSink consumer

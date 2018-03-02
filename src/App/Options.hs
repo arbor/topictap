@@ -41,9 +41,9 @@ data StatsConfig = StatsConfig
   } deriving (Show)
 
 data StoreConfig = StoreConfig
-  { _storeBucket       :: BucketName
-  , _storeIndex        :: TableName
-  , _optUploadInterval :: Seconds
+  { _storeBucket         :: BucketName
+  , _storeIndex          :: TableName
+  , _storeUploadInterval :: Seconds
   } deriving (Show)
 
 data Options = Options
