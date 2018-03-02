@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 358d0c50da66424c35905e29c3f1b7cae1b545bbbf87c795504eaf82104b31f1
+-- hash: d843ee3361cab184c1d487699610f0153721c20bcd8567b52db638efa4059243
 
 name:           topictap
 version:        1.0.0
@@ -54,6 +54,7 @@ library
     , hw-kafka-avro
     , hw-kafka-client
     , hw-kafka-conduit
+    , io-streams
     , lens
     , monad-control
     , monad-logger
@@ -128,6 +129,7 @@ executable topictap
     , hw-kafka-avro
     , hw-kafka-client
     , hw-kafka-conduit
+    , io-streams
     , lens
     , monad-control
     , monad-logger
@@ -187,6 +189,7 @@ test-suite tests
     , hw-kafka-avro
     , hw-kafka-client
     , hw-kafka-conduit
+    , io-streams
     , lens
     , lens-aeson
     , monad-control
