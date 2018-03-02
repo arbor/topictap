@@ -122,7 +122,7 @@ registerFile table time entry location = do
             , ("PartitionId",     attributeValue & avN ?~ toText pid)
             , ("Timestamp",       attributeValue & avS ?~ toText (show time))
             , ("OffsetFirst",     attributeValue & avN ?~ toText firstOffset)
-            , ("OffsetLast",      attributeValue & avS ?~ toText lastOffset)
+            , ("OffsetLast",      attributeValue & avN ?~ toText lastOffset)
             , ("LocationUri",     attributeValue & avS ?~ toText location)
             ]
   void $ dynamoPutItem table row
