@@ -48,3 +48,6 @@ instance HasAppLogger AppEnv where
 
 instance HasAwsConfig AppEnv where
   awsConfig = appOptions . optAwsConfig
+
+instance HasStoreConfig AppEnv where
+  storeConfig = appOptions . optStoreConfig

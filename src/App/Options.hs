@@ -2,6 +2,7 @@
 
 module App.Options where
 
+import App.AWS.DynamoDB      (TableName)
 import App.Types             (Seconds (..))
 import Control.Lens
 import Control.Monad.Logger  (LogLevel (..))
@@ -39,15 +40,20 @@ data StatsConfig = StatsConfig
   , _statsSampleRate :: SampleRate
   } deriving (Show)
 
+data StoreConfig = StoreConfig
+  { _storeBucket         :: BucketName
+  , _storeIndex          :: TableName
+  , _storeUploadInterval :: Seconds
+  } deriving (Show)
+
 data Options = Options
   { _optLogLevel         :: LogLevel
   , _optInputTopics      :: [TopicName]
-  , _optOutputBucket     :: BucketName
   , _optStagingDirectory :: FilePath
-  , _optUploadInterval   :: Seconds
   , _optAwsConfig        :: AwsConfig
   , _optKafkaConfig      :: KafkaConfig
   , _optStatsConfig      :: StatsConfig
+  , _optStoreConfig      :: StoreConfig
   } deriving (Show)
 
 data AwsConfig = AwsConfig
@@ -59,12 +65,16 @@ makeClassy ''KafkaConfig
 makeClassy ''StatsConfig
 makeClassy ''AwsConfig
 makeClassy ''Options
+makeClassy ''StoreConfig
 
 instance HasKafkaConfig Options where
   kafkaConfig = optKafkaConfig
 
 instance HasStatsConfig Options where
   statsConfig = optStatsConfig
+
+instance HasStoreConfig Options where
+  storeConfig = optStoreConfig
 
 instance HasAwsConfig Options where
   awsConfig = optAwsConfig
@@ -157,6 +167,25 @@ awsConfigParser = AwsConfig
       <> help "Number of parallel S3 operations"
       )
 
+storeConfigParser :: Parser StoreConfig
+storeConfigParser = StoreConfig
+  <$> readOrFromTextOption
+      (  long "output-bucket"
+      <> metavar "BUCKET"
+      <> help "Output bucket.  Data from input topics will be written to this bucket"
+      )
+  <*> fromTextOption
+      (  long "index-table"
+      <> metavar "TABLE_NAME"
+      <> help "The name of the DynamoDB table to store the index"
+      )
+  <*> ( Seconds <$> readOption
+        (  long "upload-interval"
+        <> metavar "SECONDS"
+        <> help "Interval in seconds to upload files to S3"
+        )
+      )
+
 optParser :: Parser Options
 optParser = Options
   <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
@@ -166,25 +195,15 @@ optParser = Options
       <> help "Log level"
       )
   <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
-  <*> readOrFromTextOption
-      (  long "output-bucket"
-      <> metavar "BUCKET"
-      <> help "Output bucket.  Data from input topics will be written to this bucket"
-      )
   <*> strOption
       (  long "staging-directory"
       <> metavar "PATH"
       <> help "Staging directory where generated files are stored and scheduled for upload to S3"
       )
-  <*> ( Seconds <$> readOption
-        (  long "upload-interval"
-        <> metavar "SECONDS"
-        <> help "Interval in seconds to upload files to S3"
-        )
-      )
   <*> awsConfigParser
   <*> kafkaConfigParser
   <*> statsConfigParser
+  <*> storeConfigParser
   where
     topicOption = strOption
       (  long "topic"
@@ -201,6 +220,9 @@ readOption = option $ eitherReader readEither
 
 readOptionMsg :: Read a => String -> Mod OptionFields a -> Parser a
 readOptionMsg msg = option $ eitherReader (either (Left . const msg) Right . readEither)
+
+fromTextOption :: (FromText a) => Mod OptionFields a -> Parser a
+fromTextOption = option $ eitherReader (fromText . T.pack)
 
 readOrFromTextOption :: (Read a, FromText a) => Mod OptionFields a -> Parser a
 readOrFromTextOption =
