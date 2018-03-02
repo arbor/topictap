@@ -111,7 +111,9 @@ main = do
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))
           .| sampleC (opt ^. storeUploadInterval)
+          .| effectC' (logInfo "Uploading files...")
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)
+          .| effectC' (logInfo "Uploading completed")
           .| effectC' reportProgress
           .| commitOffsetsSink consumer
 
