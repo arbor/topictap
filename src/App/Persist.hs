@@ -7,7 +7,7 @@ where
 import App.AppState
 import App.AWS.DynamoDB
 import App.AWS.S3                    (S3Location (..), putFile)
-import App.Options                   (HasAwsConfig, awsConfig, uploadThreads)
+import App.Options                   (HasAwsConfig (..), HasStoreConfig (..))
 import App.ToSha256Text              (toSha256Text)
 import Control.Concurrent.Async.Pool (mapTasks, withTaskGroup)
 import Control.Lens                  (use, view, (&), (.=), (?~), (^.))
@@ -36,37 +36,38 @@ import qualified Data.HashMap.Strict   as Map
 -- | Uploads all files from FileCache (from State) to S3.
 -- The file handles will be closed and files must not be used after this function returns.
 -- The FileCache will be emptied in State.
-uploadAllFiles :: (MonadState s m, HasFileCache s, MonadReader r m, HasAwsConfig r, HasEnv r, MonadAWS m)
-               => BucketName
-               -> TableName
-               -> CancellationToken
+uploadAllFiles :: ( MonadState s m, HasFileCache s
+                  , MonadReader r m, HasAwsConfig r, HasStoreConfig r
+                  , HasEnv r, MonadAWS m)
+               => CancellationToken
                -> UTCTime
                -> m ()
-uploadAllFiles bkt tbl ctoken timestamp = do
+uploadAllFiles ctoken timestamp = do
   cache     <- use fileCache
   entries   <- liftIO $ traverse (closeEntry . snd) (cache ^. fcEntries & M.toList)
-  uploadFiles bkt tbl ctoken timestamp entries
+  uploadFiles ctoken timestamp entries
   fileCache .= fileCacheEmpty
   where
     closeEntry e = e ^. fceHandle & hClose >> pure e
 
-uploadFiles :: (HasEnv r, MonadReader r m, HasAwsConfig r, MonadAWS m)
-            => BucketName
-            -> TableName
-            -> CancellationToken
+uploadFiles :: ( MonadAWS m, HasEnv r
+               , MonadReader r m, HasAwsConfig r, HasStoreConfig r)
+            => CancellationToken
             -> UTCTime
             -> [FileCacheEntry]
             -> m ()
-uploadFiles bkt tbl ctoken timestamp fs = do
+uploadFiles ctoken timestamp fs = do
   aws <- ask
+  bkt <- view storeBucket
+  tbl <- view storeIndex
   par <- view (awsConfig . uploadThreads)
-  liftIO . void $ mapConcurrently' par (go aws) fs
+  liftIO . void $ mapConcurrently' par (go aws bkt tbl) fs
   liftIO $ print fs
   where
-    go e file = do
+    go e b t file = do
       ctStatus <- CToken.status ctoken
       unless (ctStatus == CToken.Cancelled) $
-        runResourceT $ runAWS e (uploadFile bkt tbl timestamp file)
+        runResourceT $ runAWS e (uploadFile b t timestamp file)
 
 uploadFile :: MonadAWS m
            => BucketName

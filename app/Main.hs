@@ -84,8 +84,6 @@ main = do
 
       void . runApplication envApp $ do
         let inputTopics       = opt ^. optInputTopics
-        let outputBucket      = opt ^. optOutputBucket
-        let indexTable        = opt ^. optIndexTable
         let stagingDirectory  = opt ^. optStagingDirectory
 
         logInfo "Creating Kafka Consumer on the following topics:"
@@ -101,8 +99,6 @@ main = do
             throwM e
         liftIO $ createDirectoryIfMissing True readyDirectory
 
-        logInfo $ "Writing to output bucket: " <> show outputBucket
-
         consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
 
         logInfo "Instantiating Schema Registry"
@@ -115,7 +111,7 @@ main = do
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))
           .| sampleC (opt ^. optUploadInterval)
-          .| effectC (\(t, _) -> uploadAllFiles outputBucket indexTable ctoken t)
+          .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' reportProgress
           .| commitOffsetsSink consumer
 

@@ -40,16 +40,20 @@ data StatsConfig = StatsConfig
   , _statsSampleRate :: SampleRate
   } deriving (Show)
 
+data StoreConfig = StoreConfig
+  { _storeBucket       :: BucketName
+  , _storeIndex        :: TableName
+  , _optUploadInterval :: Seconds
+  } deriving (Show)
+
 data Options = Options
   { _optLogLevel         :: LogLevel
   , _optInputTopics      :: [TopicName]
-  , _optOutputBucket     :: BucketName
-  , _optIndexTable       :: TableName
   , _optStagingDirectory :: FilePath
-  , _optUploadInterval   :: Seconds
   , _optAwsConfig        :: AwsConfig
   , _optKafkaConfig      :: KafkaConfig
   , _optStatsConfig      :: StatsConfig
+  , _optStoreConfig      :: StoreConfig
   } deriving (Show)
 
 data AwsConfig = AwsConfig
@@ -61,12 +65,16 @@ makeClassy ''KafkaConfig
 makeClassy ''StatsConfig
 makeClassy ''AwsConfig
 makeClassy ''Options
+makeClassy ''StoreConfig
 
 instance HasKafkaConfig Options where
   kafkaConfig = optKafkaConfig
 
 instance HasStatsConfig Options where
   statsConfig = optStatsConfig
+
+instance HasStoreConfig Options where
+  storeConfig = optStoreConfig
 
 instance HasAwsConfig Options where
   awsConfig = optAwsConfig
@@ -159,16 +167,9 @@ awsConfigParser = AwsConfig
       <> help "Number of parallel S3 operations"
       )
 
-optParser :: Parser Options
-optParser = Options
-  <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
-      (  long "log-level"
-      <> metavar "LOG_LEVEL"
-      <> showDefault <> value LevelInfo
-      <> help "Log level"
-      )
-  <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
-  <*> readOrFromTextOption
+storeConfigParser :: Parser StoreConfig
+storeConfigParser = StoreConfig
+  <$> readOrFromTextOption
       (  long "output-bucket"
       <> metavar "BUCKET"
       <> help "Output bucket.  Data from input topics will be written to this bucket"
@@ -178,20 +179,31 @@ optParser = Options
       <> metavar "TABLE_NAME"
       <> help "The name of the DynamoDB table to store the index"
       )
-  <*> strOption
-      (  long "staging-directory"
-      <> metavar "PATH"
-      <> help "Staging directory where generated files are stored and scheduled for upload to S3"
-      )
   <*> ( Seconds <$> readOption
         (  long "upload-interval"
         <> metavar "SECONDS"
         <> help "Interval in seconds to upload files to S3"
         )
       )
+
+optParser :: Parser Options
+optParser = Options
+  <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
+      (  long "log-level"
+      <> metavar "LOG_LEVEL"
+      <> showDefault <> value LevelInfo
+      <> help "Log level"
+      )
+  <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
+  <*> strOption
+      (  long "staging-directory"
+      <> metavar "PATH"
+      <> help "Staging directory where generated files are stored and scheduled for upload to S3"
+      )
   <*> awsConfigParser
   <*> kafkaConfigParser
   <*> statsConfigParser
+  <*> storeConfigParser
   where
     topicOption = strOption
       (  long "topic"
