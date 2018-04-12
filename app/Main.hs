@@ -115,7 +115,8 @@ main = do
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' (logInfo "Uploading completed")
           .| effectC' reportProgress
-          .| commitOffsetsSink consumer
+          .| effectC' (commitAllOffsets OffsetCommit consumer)
+          .| sinkNull
 
     pushLogMessage lgr LevelError ("Premature exit, must not happen." :: String)
 
