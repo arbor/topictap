@@ -9,8 +9,8 @@ module App.AppState
   , appStateEmpty
 
   , fceFileName
-  , fceOffsetFirst
-  , fceOffsetLast
+  , fceOffsetFirst, fceTimestampFirst
+  , fceOffsetLast, fceTimestampLast
   , fceTopicName
   , fcePartitionId
   , fceOutputStream
@@ -26,12 +26,14 @@ import qualified Data.Map          as M
 import qualified System.IO.Streams as IO
 
 data FileCacheEntry = FileCacheEntry
-  { _fceFileName     :: FilePath
-  , _fceOffsetFirst  :: Offset
-  , _fceOffsetLast   :: Offset
-  , _fceTopicName    :: TopicName
-  , _fcePartitionId  :: PartitionId
-  , _fceOutputStream :: IO.OutputStream BS.ByteString
+  { _fceFileName       :: FilePath
+  , _fceOffsetFirst    :: Offset
+  , _fceTimestampFirst :: Timestamp
+  , _fceOffsetLast     :: Offset
+  , _fceTimestampLast  :: Timestamp
+  , _fceTopicName      :: TopicName
+  , _fcePartitionId    :: PartitionId
+  , _fceOutputStream   :: IO.OutputStream BS.ByteString
   }
 
 newtype FileCache = FileCache

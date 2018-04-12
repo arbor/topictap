@@ -8,7 +8,6 @@ import App
 import App.Codec
 import Conduit
 import Control.Lens
-import Control.Monad.State.Class
 import Data.Avro.Schema                     ()
 import Data.Avro.Types                      ()
 import Data.ByteString                      (ByteString)
@@ -47,11 +46,11 @@ handleToClosingOutputStream h = IO.makeOutputStream f
 
 outputStreamForMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m (IO.OutputStream BS.ByteString)
 outputStreamForMessage parentPath msg = do
-  s <- get
+  entries <- use (stateFileCache . fcEntries)
 
-  case M.lookup (crTopic msg, crPartition msg) (s ^. stateFileCache . fcEntries) of
+  case M.lookup (crTopic msg, crPartition msg) entries of
     Just entry -> do
-      put $ s & stateFileCache . fcEntries %~ M.insert (crTopic msg, crPartition msg) (entry & fceOffsetLast .~ crOffset msg)
+      stateFileCache . fcEntries %= M.insert (crTopic msg, crPartition msg) (entry & fceOffsetLast .~ crOffset msg & fceTimestampLast .~ crTimestamp msg)
       return $ entry ^. fceOutputStream
     Nothing -> do
       liftIO $ D.createDirectoryIfMissing True dirPath
@@ -60,14 +59,16 @@ outputStreamForMessage parentPath msg = do
       os <- liftIO $ handleToClosingOutputStream h
       zos <- liftIO $ IO.gzip IO.defaultCompressionLevel os
       let entry = FileCacheEntry
-            { _fceFileName     = filePath
-            , _fceOffsetFirst  = crOffset     msg
-            , _fceOffsetLast   = crOffset     msg
-            , _fceTopicName    = crTopic      msg
-            , _fcePartitionId  = crPartition  msg
-            , _fceOutputStream = zos
+            { _fceFileName        = filePath
+            , _fceOffsetFirst     = crOffset     msg
+            , _fceTimestampFirst  = crTimestamp  msg
+            , _fceTimestampLast   = crTimestamp  msg
+            , _fceOffsetLast      = crOffset     msg
+            , _fceTopicName       = crTopic      msg
+            , _fcePartitionId     = crPartition  msg
+            , _fceOutputStream    = zos
             }
-      put $ s & stateFileCache . fcEntries %~ M.insert (crTopic msg, crPartition msg) entry
+      stateFileCache . fcEntries %= M.insert (crTopic msg, crPartition msg) entry
       return zos
   where TopicName topicName     = crTopic msg
         PartitionId partitionId = crPartition msg

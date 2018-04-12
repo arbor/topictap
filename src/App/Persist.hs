@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module App.Persist
   ( uploadAllFiles
@@ -22,7 +23,7 @@ import Data.Text                     as T
 import Data.Time.Clock               (UTCTime)
 import Data.Time.Clock.POSIX         (utcTimeToPOSIXSeconds)
 import GHC.Int                       (Int64)
-import Kafka.Consumer                (Offset (..), PartitionId (..), TopicName (..))
+import Kafka.Consumer                (Millis (..), Offset (..), PartitionId (..), Timestamp (..), TopicName (..))
 import Network.AWS                   (HasEnv, MonadAWS, runAWS)
 import Network.AWS.Data              (toText)
 import Network.AWS.S3.Types          (BucketName (..), ObjectKey (..))
@@ -79,6 +80,12 @@ uploadFile bkt tbl timestamp entry = do
 
 -------------------------------------------------------------------------------
 
+recTimestamp :: Timestamp -> Int64
+recTimestamp = \case
+  CreateTime (Millis m)    -> m
+  LogAppendTime (Millis m) -> m
+  NoTimestamp              -> 0
+
 mkS3Path :: UTCTime -> FileCacheEntry -> IO ObjectKey
 mkS3Path t e = do
   hash <- toSha256Text <$> LBS.readFile (e ^. fceFileName)
@@ -86,12 +93,15 @@ mkS3Path t e = do
   let PartitionId pid     = e ^. fcePartitionId
   let Offset firstOffset  = e ^. fceOffsetFirst
   let Offset lastOffset   = e ^. fceOffsetLast
+  let firstTimestamp      = e ^. fceTimestampFirst
+  let lastTimestamp       = e ^. fceTimestampLast
   let partDir   = T.pack topicName <> "/" <> T.pack (show pid)
   let prefix    = T.take 5 $ toSha256Text partDir
   let fullDir   = prefix <> "/" <> partDir
   let timestamp = round $ utcTimeToPOSIXSeconds t :: Int64
-  let fileName  = T.intercalate "-" [ T.pack (show firstOffset)
-                                    , T.pack (show lastOffset)
+  let at a b = toText a <> "@" <> toText b
+  let fileName  = T.intercalate "-" [ firstOffset `at` recTimestamp firstTimestamp
+                                    , lastOffset  `at` recTimestamp lastTimestamp
                                     , T.pack (show timestamp)
                                     , hash
                                     ] <> ".json.gz"
@@ -112,6 +122,8 @@ registerFile table time entry location = do
   let PartitionId pid     = entry ^. fcePartitionId
   let Offset firstOffset  = entry ^. fceOffsetFirst
   let Offset lastOffset   = entry ^. fceOffsetLast
+  let firstTimestamp      = entry ^. fceTimestampFirst
+  let lastTimestamp       = entry ^. fceTimestampLast
 
   let row = Map.fromList
             [ ("TopicPartition",  attributeValue & avS ?~ (toText topicName <> ":" <> toText pid))
@@ -119,7 +131,9 @@ registerFile table time entry location = do
             , ("PartitionId",     attributeValue & avN ?~ toText pid)
             , ("Timestamp",       attributeValue & avS ?~ toText (show time))
             , ("OffsetFirst",     attributeValue & avN ?~ toText firstOffset)
+            , ("TimestampFirst",  attributeValue & avN ?~ toText (recTimestamp firstTimestamp))
             , ("OffsetLast",      attributeValue & avN ?~ toText lastOffset)
+            , ("TimestampLast",   attributeValue & avN ?~ toText (recTimestamp lastTimestamp))
             , ("LocationUri",     attributeValue & avS ?~ toText location)
             ]
   void $ dynamoPutItem table row
