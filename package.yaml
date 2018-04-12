@@ -86,7 +86,8 @@ library:
   - App.AppEnv
   - App.AppError
   - App.Application
-  - App.AppState
+  - App.AppState.Lens
+  - App.AppState.Type
   - App.AWS.Env
   - App.AWS.S3
   - App.CancellationToken

@@ -33,21 +33,22 @@ import System.Directory
 import System.Environment
 import System.IO.Error
 
-import qualified Data.Map  as M
-import qualified Data.Set  as S
-import qualified Data.Text as T
+import qualified App.AppState.Lens as L
+import qualified Data.Map          as M
+import qualified Data.Set          as S
+import qualified Data.Text         as T
 
 reportProgress :: (MonadLogger m, MonadStats m, MonadState AppState m) => m ()
 reportProgress = do
-  reads' <- use stateMsgReadCount
-  writes <- use stateMsgWriteCount
+  reads' <- use L.msgReadCount
+  writes <- use L.msgWriteCount
   let drops = reads' - writes
   logInfo $ "Reads: " <> show reads' <> ", writes: " <> show writes
   sendMetric (addCounter (MetricName "scorefilter.read.count" ) id reads')
   sendMetric (addCounter (MetricName "scorefilter.write.count") id writes)
   sendMetric (addCounter (MetricName "scorefilter.drop.count") id drops)
-  stateMsgReadCount .= 0
-  stateMsgWriteCount .= 0
+  L.msgReadCount .= 0
+  L.msgWriteCount .= 0
 
 onRebalance :: (MonadLogger m, MonadThrow m, MonadIO m) => KafkaConsumer -> TopicName -> (S.Set PartitionId -> m a) -> ConduitM o o m ()
 onRebalance consumer topicName handleRebalance = go S.empty

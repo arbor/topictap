@@ -1,5 +1,8 @@
 module DevApp where
 
+import App.AppState.Type
+import App.AWS.Env
+import App.Orphans                  ()
 import Arbor.Logger
 import Control.Monad.Base
 import Control.Monad.Catch
@@ -9,10 +12,6 @@ import Control.Monad.State.Strict   (MonadState (..), StateT, execStateT)
 import Control.Monad.Trans.Resource
 import Network.AWS                  as AWS hiding (LogLevel)
 import Network.StatsD               as S
-
-import App.AppState
-import App.AWS.Env
-import App.Orphans  ()
 
 newtype DevApp a = DevApp
   { unDevApp :: StateT AppState (LoggingT AWS) a

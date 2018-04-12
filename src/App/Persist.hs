@@ -4,7 +4,7 @@ module App.Persist
   ( uploadAllFiles
   ) where
 
-import App.AppState
+import App.AppState.Type
 import App.AWS.DynamoDB
 import App.AWS.S3                    (S3Location (..), putFile)
 import App.CancellationToken         (CancellationToken)
@@ -28,6 +28,7 @@ import Network.AWS                   (HasEnv, MonadAWS, runAWS)
 import Network.AWS.Data              (toText)
 import Network.AWS.S3.Types          (BucketName (..), ObjectKey (..))
 
+import qualified App.AppState.Lens     as L
 import qualified App.CancellationToken as CToken
 import qualified Data.ByteString.Lazy  as LBS
 import qualified Data.HashMap.Strict   as Map
@@ -36,18 +37,18 @@ import qualified System.IO.Streams     as IO
 -- | Uploads all files from FileCache (from State) to S3.
 -- The file handles will be closed and files must not be used after this function returns.
 -- The FileCache will be emptied in State.
-uploadAllFiles :: ( MonadState s m, HasFileCache s
+uploadAllFiles :: ( MonadState s m, L.HasFileCache s FileCache
                   , MonadReader r m, HasAwsConfig r, HasStoreConfig r
                   , HasEnv r, MonadAWS m)
                => CancellationToken
                -> UTCTime
                -> m ()
 uploadAllFiles ctoken timestamp = do
-  cache     <- use fileCache
-  entries   <- liftIO $ traverse (closeEntry . snd) (cache ^. fcEntries & M.toList)
+  cache     <- use L.fileCache
+  entries   <- liftIO $ traverse (closeEntry . snd) (cache ^. L.entries & M.toList)
   uploadFiles ctoken timestamp entries
-  fileCache .= fileCacheEmpty
-  where closeEntry e = IO.write Nothing (e ^. fceOutputStream) >> pure e
+  L.fileCache .= fileCacheEmpty
+  where closeEntry e = IO.write Nothing (e ^. L.outputStream) >> pure e
 
 uploadFiles :: ( MonadAWS m, HasEnv r
                , MonadReader r m, HasAwsConfig r, HasStoreConfig r)
@@ -75,7 +76,7 @@ uploadFile :: MonadAWS m
            -> m ()
 uploadFile bkt tbl timestamp entry = do
   objKey <- liftIO $ mkS3Path timestamp entry
-  void $ putFile bkt objKey (entry ^. fceFileName)
+  void $ putFile bkt objKey (entry ^. L.fileName)
   void $ registerFile tbl timestamp entry (S3Location bkt objKey)
 
 -------------------------------------------------------------------------------
@@ -88,20 +89,20 @@ recTimestamp = \case
 
 mkS3Path :: UTCTime -> FileCacheEntry -> IO ObjectKey
 mkS3Path t e = do
-  hash <- toSha256Text <$> LBS.readFile (e ^. fceFileName)
-  let TopicName topicName = e ^. fceTopicName
-  let PartitionId pid     = e ^. fcePartitionId
-  let Offset firstOffset  = e ^. fceOffsetFirst
-  let Offset lastOffset   = e ^. fceOffsetLast
-  let firstTimestamp      = e ^. fceTimestampFirst
-  let lastTimestamp       = e ^. fceTimestampLast
+  hash <- toSha256Text <$> LBS.readFile (e ^. L.fileName)
+  let TopicName topicName = e ^. L.topicName
+  let PartitionId pid     = e ^. L.partitionId
+  let Offset firstOffset  = e ^. L.offsetFirst
+  let Offset maxOffset    = e ^. L.offsetMax
+  let firstTimestamp      = e ^. L.timestampFirst
+  let lastTimestamp       = e ^. L.timestampLast
   let partDir   = T.pack topicName <> "/" <> T.pack (show pid)
   let prefix    = T.take 5 $ toSha256Text partDir
   let fullDir   = prefix <> "/" <> partDir
   let timestamp = round $ utcTimeToPOSIXSeconds t :: Int64
   let at a b = toText a <> "@" <> toText b
   let fileName  = T.intercalate "-" [ firstOffset `at` recTimestamp firstTimestamp
-                                    , lastOffset  `at` recTimestamp lastTimestamp
+                                    , maxOffset   `at` recTimestamp lastTimestamp
                                     , T.pack (show timestamp)
                                     , hash
                                     ] <> ".json.gz"
@@ -118,12 +119,12 @@ registerFile :: MonadAWS m
              -> S3Location
              -> m ()
 registerFile table time entry location = do
-  let TopicName topicName = entry ^. fceTopicName
-  let PartitionId pid     = entry ^. fcePartitionId
-  let Offset firstOffset  = entry ^. fceOffsetFirst
-  let Offset lastOffset   = entry ^. fceOffsetLast
-  let firstTimestamp      = entry ^. fceTimestampFirst
-  let lastTimestamp       = entry ^. fceTimestampLast
+  let TopicName topicName = entry ^. L.topicName
+  let PartitionId pid     = entry ^. L.partitionId
+  let Offset firstOffset  = entry ^. L.offsetFirst
+  let Offset maxOffset    = entry ^. L.offsetMax
+  let firstTimestamp      = entry ^. L.timestampFirst
+  let lastTimestamp       = entry ^. L.timestampLast
 
   let row = Map.fromList
             [ ("TopicPartition",  attributeValue & avS ?~ (toText topicName <> ":" <> toText pid))
@@ -132,7 +133,7 @@ registerFile table time entry location = do
             , ("Timestamp",       attributeValue & avS ?~ toText (show time))
             , ("OffsetFirst",     attributeValue & avN ?~ toText firstOffset)
             , ("TimestampFirst",  attributeValue & avN ?~ toText (recTimestamp firstTimestamp))
-            , ("OffsetLast",      attributeValue & avN ?~ toText lastOffset)
+            , ("OffsetMax",       attributeValue & avN ?~ toText maxOffset)
             , ("TimestampLast",   attributeValue & avN ?~ toText (recTimestamp lastTimestamp))
             , ("LocationUri",     attributeValue & avS ?~ toText location)
             ]

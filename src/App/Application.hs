@@ -10,6 +10,10 @@ module App.Application
   , runApplication
   ) where
 
+import App.AppEnv
+import App.AppState.Type
+import App.Options
+import App.Orphans                  ()
 import Arbor.Logger
 import Control.Lens
 import Control.Monad.Base
@@ -22,11 +26,6 @@ import Control.Monad.Trans.Resource
 import Data.Text                    (Text)
 import Network.AWS                  as AWS hiding (LogLevel)
 import Network.StatsD               as S
-
-import App.AppEnv
-import App.AppState
-import App.Options
-import App.Orphans  ()
 
 type AppName = Text
 
