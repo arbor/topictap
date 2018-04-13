@@ -18,6 +18,7 @@ import Kafka.Conduit.Source
 import System.IO
 import Text.Printf
 
+import qualified App.AppState.Lens       as L
 import qualified Data.Aeson              as J
 import qualified Data.Aeson.Text         as JT
 import qualified Data.ByteString         as BS
@@ -33,10 +34,10 @@ handleStream :: MonadApp m
              -> FilePath
              -> Conduit (ConsumerRecord (Maybe ByteString) (Maybe ByteString)) m ()
 handleStream sr fp =
-     effectC (const (stateMsgReadCount += 1))
+     effectC (const (L.msgReadCount += 1))
   .| mapMC (decodeMessage sr)
   .| effectC (writeDecodedMessage fp)
-  .| effectC (const (stateMsgWriteCount += 1))
+  .| effectC (const (L.msgWriteCount += 1))
   .| mapC (const ())
 
 handleToClosingOutputStream :: Handle -> IO (IO.OutputStream ByteString)
@@ -44,14 +45,20 @@ handleToClosingOutputStream h = IO.makeOutputStream f
   where f Nothing  = hFlush h >> hClose h
         f (Just x) = if BS.null x then hFlush h else BS.hPut h x
 
+-- TODO Inline this function when Ord Offset becomes available
+updateOffset :: Offset -> Offset -> Offset
+updateOffset (Offset a) (Offset b) = Offset (a `max` b)
+
 outputStreamForMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m (IO.OutputStream BS.ByteString)
 outputStreamForMessage parentPath msg = do
-  entries <- use (stateFileCache . fcEntries)
+  entries <- use (L.fileCache . L.entries)
 
   case M.lookup (crTopic msg, crPartition msg) entries of
     Just entry -> do
-      stateFileCache . fcEntries %= M.insert (crTopic msg, crPartition msg) (entry & fceOffsetLast .~ crOffset msg & fceTimestampLast .~ crTimestamp msg)
-      return $ entry ^. fceOutputStream
+      (L.fileCache . L.entries %=) $ M.insert (crTopic msg, crPartition msg) $ entry
+        & L.offsetMax     %~ updateOffset (crOffset msg)
+        & L.timestampLast .~ crTimestamp msg
+      return $ entry ^. L.outputStream
     Nothing -> do
       liftIO $ D.createDirectoryIfMissing True dirPath
       let filePath = dirPath <> "/" <> printf "%05d" partitionId <> ".json"
@@ -59,16 +66,16 @@ outputStreamForMessage parentPath msg = do
       os <- liftIO $ handleToClosingOutputStream h
       zos <- liftIO $ IO.gzip IO.defaultCompressionLevel os
       let entry = FileCacheEntry
-            { _fceFileName        = filePath
-            , _fceOffsetFirst     = crOffset     msg
-            , _fceTimestampFirst  = crTimestamp  msg
-            , _fceTimestampLast   = crTimestamp  msg
-            , _fceOffsetLast      = crOffset     msg
-            , _fceTopicName       = crTopic      msg
-            , _fcePartitionId     = crPartition  msg
-            , _fceOutputStream    = zos
+            { _fileCacheEntryFileName       = filePath
+            , _fileCacheEntryOffsetFirst    = crOffset     msg
+            , _fileCacheEntryTimestampFirst = crTimestamp  msg
+            , _fileCacheEntryTimestampLast  = crTimestamp  msg
+            , _fileCacheEntryOffsetMax      = crOffset     msg
+            , _fileCacheEntryTopicName      = crTopic      msg
+            , _fileCacheEntryPartitionId    = crPartition  msg
+            , _fileCacheEntryOutputStream   = zos
             }
-      stateFileCache . fcEntries %= M.insert (crTopic msg, crPartition msg) entry
+      L.fileCache . L.entries %= M.insert (crTopic msg, crPartition msg) entry
       return zos
   where TopicName topicName     = crTopic msg
         PartitionId partitionId = crPartition msg
