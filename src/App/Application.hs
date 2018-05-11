@@ -10,6 +10,7 @@ module App.Application
   , runApplication
   ) where
 
+import Antiope.Core                 (AWS, MonadAWS, runAWS)
 import App.AppEnv
 import App.AppState.Type
 import App.Options
@@ -24,7 +25,6 @@ import Control.Monad.Reader
 import Control.Monad.State.Strict   (MonadState (..), StateT, execStateT)
 import Control.Monad.Trans.Resource
 import Data.Text                    (Text)
-import Network.AWS                  as AWS hiding (LogLevel)
 import Network.StatsD               as S
 
 type AppName = Text

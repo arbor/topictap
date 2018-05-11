@@ -36,10 +36,9 @@ default-extensions:
 dependencies:
 - base >=4.7 && <5
 - aeson
-- amazonka
-- amazonka-core
-- amazonka-s3
-- amazonka-dynamodb
+- antiope-core
+- antiope-s3
+- antiope-dynamodb
 - async-pool
 - avro
 - base16-bytestring
@@ -92,8 +91,6 @@ library:
   - App.Application
   - App.AppState.Lens
   - App.AppState.Type
-  - App.AWS.Env
-  - App.AWS.S3
   - App.CancellationToken
   - App.Codec
   - App.Conduit.Time

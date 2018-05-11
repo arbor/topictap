@@ -46,9 +46,7 @@ decodeMessage sr msg = do
   return $ const payload <$> msg
   where
     decodeAvroMessage bs = decodeAvro sr (fromStrict bs) >>= throwAs DecodeErr
-    unPartitionId (PartitionId v) = v
     unSchemaId (SchemaId v) = v
-    unOffset (Offset v) = v
     unTimeStamp = \case
       CreateTime (Millis m)    -> Just (object ["type" .= J.String "CreatedTime",   "value" .= m])
       LogAppendTime (Millis m) -> Just (object ["type" .= J.String "LogAppendTime", "value" .= m])
