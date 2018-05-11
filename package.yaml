@@ -87,22 +87,23 @@ library:
   - -Wredundant-constraints
   exposed-modules:
   - App
-  - App.AppEnv
-  - App.AppError
-  - App.Application
-  - App.AppState.Lens
-  - App.AppState.Type
   - App.AWS.Env
   - App.AWS.S3
+  - App.AppEnv
+  - App.AppError
+  - App.AppState.Lens
+  - App.AppState.Type
+  - App.Application
   - App.CancellationToken
   - App.Codec
   - App.Conduit.Time
   - App.Kafka
+  - App.Lens
   - App.Options
   - App.Persist
   - App.Service
   - App.ToSha256Text
-  - App.Types
+  - App.Type
   dependencies:
   - base64-bytestring
   - conduit-combinators

@@ -2,7 +2,7 @@
 
 module App.Db where
 
-import App.Options
+import App.Type
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Logger   (runStderrLoggingT)
 import Data.Function

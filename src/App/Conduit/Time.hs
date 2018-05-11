@@ -1,8 +1,8 @@
 {-# LANGUAGE TupleSections #-}
-module  App.Conduit.Time
-where
 
-import App.Types             (Seconds (..))
+module  App.Conduit.Time where
+
+import App.Type              (Seconds (..))
 import Conduit
 import Data.Time.Clock       (UTCTime)
 import Data.Time.Clock.POSIX (getCurrentTime, utcTimeToPOSIXSeconds)
