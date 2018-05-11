@@ -2,96 +2,18 @@
 
 module App.Options where
 
-import App.AWS.DynamoDB      (TableName)
-import App.Types             (Seconds (..))
-import Control.Lens
+import App.Type
 import Control.Monad.Logger  (LogLevel (..))
 import Data.Semigroup        ((<>))
-import Network.AWS.Data.Text (FromText (..), fromText)
-import Network.AWS.S3.Types  (BucketName, Region (..))
-import Network.Socket        (HostName)
-import Network.StatsD        (SampleRate (..))
-
-import Options.Applicative
-import Text.Read           (readEither)
-
 import Kafka.Consumer.Types
 import Kafka.Types
+import Network.AWS.Data.Text (FromText (..), fromText)
+import Network.AWS.S3.Types  (Region (..))
+import Network.StatsD        (SampleRate (..))
+import Options.Applicative
+import Text.Read             (readEither)
 
-import           Data.Text (Text)
 import qualified Data.Text as T
-
-newtype StatsTag = StatsTag (Text, Text) deriving (Show, Eq)
-
-data KafkaConfig = KafkaConfig
-  { _broker                :: BrokerAddress
-  , _schemaRegistryAddress :: String
-  , _pollTimeoutMs         :: Timeout
-  , _queuedMaxMsgKBytes    :: Int
-  , _consumerGroupId       :: ConsumerGroupId
-  , _debugOpts             :: String
-  , _commitPeriodSec       :: Int
-  } deriving (Show)
-
-data StatsConfig = StatsConfig
-  { _statsHost       :: HostName
-  , _statsPort       :: Int
-  , _statsTags       :: [StatsTag]
-  , _statsSampleRate :: SampleRate
-  } deriving (Show)
-
-data StoreConfig = StoreConfig
-  { _storeBucket         :: BucketName
-  , _storeIndex          :: TableName
-  , _storeUploadInterval :: Seconds
-  } deriving (Show)
-
-data Options = Options
-  { _optLogLevel         :: LogLevel
-  , _optInputTopics      :: [TopicName]
-  , _optStagingDirectory :: FilePath
-  , _optAwsConfig        :: AwsConfig
-  , _optKafkaConfig      :: KafkaConfig
-  , _optStatsConfig      :: StatsConfig
-  , _optStoreConfig      :: StoreConfig
-  } deriving (Show)
-
-data AwsConfig = AwsConfig
-  { _awsRegion     :: Region
-  , _uploadThreads :: Int
-  } deriving (Show)
-
-newtype Password = Password
-  { _passwordValue :: Text
-  } deriving (Read, Eq)
-
-instance Show Password where
-  show _ = "************"
-
-data DbConfig = DbConfig
-  { _dbConfigHost     :: Text
-  , _dbConfigUser     :: Text
-  , _dbConfigPassword :: Password
-  , _dbConfigDatabase :: Text
-  } deriving (Eq, Show)
-
-makeClassy ''KafkaConfig
-makeClassy ''StatsConfig
-makeClassy ''AwsConfig
-makeClassy ''Options
-makeClassy ''StoreConfig
-
-instance HasKafkaConfig Options where
-  kafkaConfig = optKafkaConfig
-
-instance HasStatsConfig Options where
-  statsConfig = optStatsConfig
-
-instance HasStoreConfig Options where
-  storeConfig = optStoreConfig
-
-instance HasAwsConfig Options where
-  awsConfig = optAwsConfig
 
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig

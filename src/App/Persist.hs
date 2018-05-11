@@ -8,7 +8,6 @@ import App.AppState.Type
 import App.AWS.DynamoDB
 import App.AWS.S3                    (S3Location (..), putFile)
 import App.CancellationToken         (CancellationToken)
-import App.Options                   (HasAwsConfig (..), HasStoreConfig (..), awsConfig, uploadThreads)
 import App.ToSha256Text              (toSha256Text)
 import Control.Concurrent.Async.Pool (mapTasks, withTaskGroup)
 import Control.Lens                  (use, view, (&), (.=), (?~), (^.))
@@ -28,6 +27,7 @@ import Network.AWS                   (HasEnv, MonadAWS, runAWS)
 import Network.AWS.Data              (toText)
 import Network.AWS.S3.Types          (BucketName (..), ObjectKey (..))
 
+import qualified App.Lens as L
 import qualified App.AppState.Lens     as L
 import qualified App.CancellationToken as CToken
 import qualified Data.ByteString.Lazy  as LBS
@@ -38,7 +38,7 @@ import qualified System.IO.Streams     as IO
 -- The file handles will be closed and files must not be used after this function returns.
 -- The FileCache will be emptied in State.
 uploadAllFiles :: ( MonadState s m, L.HasFileCache s FileCache
-                  , MonadReader r m, HasAwsConfig r, HasStoreConfig r
+                  , MonadReader r m, L.HasAwsConfig r, L.HasStoreConfig r
                   , HasEnv r, MonadAWS m)
                => CancellationToken
                -> UTCTime
@@ -51,16 +51,16 @@ uploadAllFiles ctoken timestamp = do
   where closeEntry e = IO.write Nothing (e ^. L.outputStream) >> pure e
 
 uploadFiles :: ( MonadAWS m, HasEnv r
-               , MonadReader r m, HasAwsConfig r, HasStoreConfig r)
+               , MonadReader r m, L.HasAwsConfig r, L.HasStoreConfig r)
             => CancellationToken
             -> UTCTime
             -> [FileCacheEntry]
             -> m ()
 uploadFiles ctoken timestamp fs = do
   aws <- ask
-  bkt <- view storeBucket
-  tbl <- view storeIndex
-  par <- view (awsConfig . uploadThreads)
+  bkt <- view L.storeBucket
+  tbl <- view L.storeIndex
+  par <- view (L.awsConfig . L.uploadThreads)
   liftIO . void $ mapConcurrently' par (go aws bkt tbl) fs
   where
     go e b t file = do

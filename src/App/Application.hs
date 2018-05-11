@@ -10,10 +10,9 @@ module App.Application
   , runApplication
   ) where
 
-import App.AppEnv
 import App.AppState.Type
-import App.Options
 import App.Orphans                  ()
+import App.Type
 import Arbor.Logger
 import Control.Lens
 import Control.Monad.Base
@@ -26,6 +25,8 @@ import Control.Monad.Trans.Resource
 import Data.Text                    (Text)
 import Network.AWS                  as AWS hiding (LogLevel)
 import Network.StatsD               as S
+
+import qualified App.Lens as L
 
 type AppName = Text
 
@@ -64,8 +65,8 @@ runApplication :: AppEnv -> Application () -> IO AppState
 runApplication envApp f =
   runResourceT
     . runAWS envApp
-    . runTimedLogT (envApp ^. appOptions . optLogLevel) (envApp ^. appLog . alLogger)
+    . runTimedLogT (envApp ^. L.appOptions . L.optLogLevel) (envApp ^. L.appLog . L.alLogger)
     . flip execStateT appStateEmpty
     $ do
-        logInfo $ show (envApp ^. appOptions)
+        logInfo $ show (envApp ^. L.appOptions)
         runReaderT (unApp f) envApp
