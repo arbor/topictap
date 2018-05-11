@@ -94,7 +94,9 @@ library:
   - App.CancellationToken
   - App.Codec
   - App.Conduit.Time
+  - App.Has
   - App.Kafka
+  - App.Lens
   - App.Options
   - App.Persist
   - App.Service
