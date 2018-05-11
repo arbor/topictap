@@ -61,6 +61,20 @@ data AwsConfig = AwsConfig
   , _uploadThreads :: Int
   } deriving (Show)
 
+newtype Password = Password
+  { _passwordValue :: Text
+  } deriving (Read, Eq)
+
+instance Show Password where
+  show _ = "************"
+
+data DbConfig = DbConfig
+  { _dbConfigHost     :: Text
+  , _dbConfigUser     :: Text
+  , _dbConfigPassword :: Password
+  , _dbConfigDatabase :: Text
+  } deriving (Eq, Show)
+
 makeClassy ''KafkaConfig
 makeClassy ''StatsConfig
 makeClassy ''AwsConfig
