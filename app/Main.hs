@@ -34,6 +34,7 @@ import System.IO.Error                      (ioeGetErrorType, isDoesNotExistErro
 
 import qualified Antiope.Env          as AWS
 import qualified App.AppState.Lens    as L
+import qualified App.Lens             as L
 import qualified Arbor.Logger         as Log
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Map             as M
@@ -106,11 +107,11 @@ main = do
         consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
 
         logInfo "Instantiating Schema Registry"
-        sr <- schemaRegistry (kafkaConf ^. schemaRegistryAddress)
+        sr <- schemaRegistry (kafkaConf ^. L.schemaRegistryAddress)
 
         logInfo "Running Kafka Consumer"
         runConduit $
-          kafkaSourceNoClose consumer (kafkaConf ^. pollTimeoutMs)
+          kafkaSourceNoClose consumer (kafkaConf ^. L.pollTimeoutMs)
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))

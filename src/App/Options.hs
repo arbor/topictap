@@ -24,13 +24,13 @@ import qualified Data.Text as T
 newtype StatsTag = StatsTag (Text, Text) deriving (Show, Eq)
 
 data KafkaConfig = KafkaConfig
-  { _broker                :: BrokerAddress
-  , _schemaRegistryAddress :: String
-  , _pollTimeoutMs         :: Timeout
-  , _queuedMaxMsgKBytes    :: Int
-  , _consumerGroupId       :: ConsumerGroupId
-  , _debugOpts             :: String
-  , _commitPeriodSec       :: Int
+  { _kafkaConfigBroker                :: BrokerAddress
+  , _kafkaConfigSchemaRegistryAddress :: String
+  , _kafkaConfigPollTimeoutMs         :: Timeout
+  , _kafkaConfigQueuedMaxMsgKBytes    :: Int
+  , _kafkaConfigConsumerGroupId       :: ConsumerGroupId
+  , _kafkaConfigDebugOpts             :: String
+  , _kafkaConfigCommitPeriodSec       :: Int
   } deriving (Show)
 
 data StatsConfig = StatsConfig
@@ -75,7 +75,6 @@ data DbConfig = DbConfig
   , _dbConfigDatabase :: Text
   } deriving (Eq, Show)
 
-makeClassy ''KafkaConfig
 makeClassy ''StatsConfig
 makeClassy ''AwsConfig
 makeClassy ''Options

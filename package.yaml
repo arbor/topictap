@@ -95,6 +95,7 @@ library:
   - App.Codec
   - App.Conduit.Time
   - App.Kafka
+  - App.Lens
   - App.Options
   - App.Persist
   - App.Service

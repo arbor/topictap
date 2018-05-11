@@ -14,6 +14,9 @@ instance HasEnv AppEnv where
 class HasStatsClient a where
   statsClient :: Lens' a StatsClient
 
+class HasKafkaConfig a where
+  kafkaConfig :: Lens' a KafkaConfig
+
 instance HasStatsClient StatsClient where
   statsClient = id
 
