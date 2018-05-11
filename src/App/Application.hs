@@ -27,6 +27,8 @@ import Control.Monad.Trans.Resource
 import Data.Text                    (Text)
 import Network.StatsD               as S
 
+import qualified App.Has as H ()
+
 type AppName = Text
 
 class ( MonadReader AppEnv m

@@ -81,18 +81,6 @@ makeClassy ''AwsConfig
 makeClassy ''Options
 makeClassy ''StoreConfig
 
-instance HasKafkaConfig Options where
-  kafkaConfig = optKafkaConfig
-
-instance HasStatsConfig Options where
-  statsConfig = optStatsConfig
-
-instance HasStoreConfig Options where
-  storeConfig = optStoreConfig
-
-instance HasAwsConfig Options where
-  awsConfig = optAwsConfig
-
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig
   <$> strOption
