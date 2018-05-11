@@ -1,24 +1,19 @@
-{-# LANGUAGE TemplateHaskell #-}
-
 module App.Options where
 
 import Antiope.Core         (FromText (..), Region (..), fromText)
 import Antiope.DynamoDB     (TableName)
 import Antiope.S3           (BucketName)
 import App.Types            (Seconds (..))
-import Control.Lens
 import Control.Monad.Logger (LogLevel (..))
 import Data.Semigroup       ((<>))
-import Network.Socket       (HostName)
-import Network.StatsD       (SampleRate (..))
-
-import Options.Applicative
-import Text.Read           (readEither)
-
+import Data.Text            (Text)
 import Kafka.Consumer.Types
 import Kafka.Types
+import Network.Socket       (HostName)
+import Network.StatsD       (SampleRate (..))
+import Options.Applicative
+import Text.Read            (readEither)
 
-import           Data.Text (Text)
 import qualified Data.Text as T
 
 newtype StatsTag = StatsTag (Text, Text) deriving (Show, Eq)
@@ -46,14 +41,14 @@ data StoreConfig = StoreConfig
   , _storeConfigUploadInterval :: Seconds
   } deriving (Show)
 
-data Options = Options
-  { _optLogLevel         :: LogLevel
-  , _optInputTopics      :: [TopicName]
-  , _optStagingDirectory :: FilePath
-  , _optAwsConfig        :: AwsConfig
-  , _optKafkaConfig      :: KafkaConfig
-  , _optStatsConfig      :: StatsConfig
-  , _optStoreConfig      :: StoreConfig
+data AppOptions = AppOptions
+  { _appOptionsLogLevel         :: LogLevel
+  , _appOptionsInputTopics      :: [TopicName]
+  , _appOptionsStagingDirectory :: FilePath
+  , _appOptionsAwsConfig        :: AwsConfig
+  , _appOptionsKafkaConfig      :: KafkaConfig
+  , _appOptionsStatsConfig      :: StatsConfig
+  , _appOptionsStoreConfig      :: StoreConfig
   } deriving (Show)
 
 data AwsConfig = AwsConfig
@@ -74,8 +69,6 @@ data DbConfig = DbConfig
   , _dbConfigPassword :: Password
   , _dbConfigDatabase :: Text
   } deriving (Eq, Show)
-
-makeClassy ''Options
 
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig
@@ -184,8 +177,8 @@ storeConfigParser = StoreConfig
         )
       )
 
-optParser :: Parser Options
-optParser = Options
+optParser :: Parser AppOptions
+optParser = AppOptions
   <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
       (  long "log-level"
       <> metavar "LOG_LEVEL"
@@ -233,12 +226,12 @@ string2Tags s = StatsTag . splitTag <$> splitTags
     splitTags = T.split (==',') (T.pack s)
     splitTag t = T.drop 1 <$> T.break (==':') t
 
-optParserInfo :: ParserInfo Options
+optParserInfo :: ParserInfo AppOptions
 optParserInfo = info (helper <*> optParser)
   (  fullDesc
   <> progDesc "Dump avro data from kafka topic to S3"
   <> header "Kafka to S3"
   )
 
-parseOptions :: IO Options
+parseOptions :: IO AppOptions
 parseOptions = execParser optParserInfo

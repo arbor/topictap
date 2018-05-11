@@ -16,7 +16,7 @@ data AppLogger = AppLogger
   }
 
 data AppEnv = AppEnv
-  { _appOptions     :: Options
+  { _appOptions     :: AppOptions
   , _appStatsClient :: StatsClient
   , _appLog         :: AppLogger
   , _appEnvAws      :: Env

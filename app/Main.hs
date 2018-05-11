@@ -76,9 +76,9 @@ main :: IO ()
 main = do
   opt <- parseOptions
   progName <- T.pack <$> getProgName
-  let logLvl    = opt ^. optLogLevel
-  let kafkaConf = opt ^. optKafkaConfig
-  let statsConf = opt ^. optStatsConfig
+  let logLvl    = opt ^. L.logLevel
+  let kafkaConf = opt ^. L.kafkaConfig
+  let statsConf = opt ^. L.statsConfig
 
   ctoken <- newCancellationToken
 
@@ -89,8 +89,8 @@ main = do
       let envApp = AppEnv opt stats envLogger envAws
 
       void . runApplication envApp $ do
-        let inputTopics       = opt ^. optInputTopics
-        let stagingDirectory  = opt ^. optStagingDirectory
+        let inputTopics       = opt ^. L.inputTopics
+        let stagingDirectory  = opt ^. L.stagingDirectory
 
         logInfo "Creating Kafka Consumer on the following topics:"
         forM_ inputTopics $ \inputTopic -> logInfo $ "  " <> show inputTopic
@@ -105,7 +105,7 @@ main = do
             throwM e
         liftIO $ createDirectoryIfMissing True readyDirectory
 
-        consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
+        consumer <- mkConsumer Nothing (opt ^. L.inputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
 
         logInfo "Instantiating Schema Registry"
         sr <- schemaRegistry (kafkaConf ^. L.schemaRegistryAddress)
@@ -115,7 +115,7 @@ main = do
           kafkaSourceNoClose consumer (kafkaConf ^. L.pollTimeoutMs)
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
-          .| rightC (handleStream sr (opt ^. optStagingDirectory))
+          .| rightC (handleStream sr (opt ^. L.stagingDirectory))
           .| sampleC (opt ^. H.storeConfig . L.uploadInterval)
           .| effectC' (logInfo "Uploading files...")
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)

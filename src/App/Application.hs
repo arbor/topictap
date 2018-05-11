@@ -13,7 +13,6 @@ module App.Application
 import Antiope.Core                 (AWS, MonadAWS, runAWS)
 import App.AppEnv
 import App.AppState.Type
-import App.Options
 import App.Orphans                  ()
 import Arbor.Logger
 import Control.Lens
@@ -27,7 +26,8 @@ import Control.Monad.Trans.Resource
 import Data.Text                    (Text)
 import Network.StatsD               as S
 
-import qualified App.Has as H ()
+import qualified App.Has  as H ()
+import qualified App.Lens as L
 
 type AppName = Text
 
@@ -66,7 +66,7 @@ runApplication :: AppEnv -> Application () -> IO AppState
 runApplication envApp f =
   runResourceT
     . runAWS envApp
-    . runTimedLogT (envApp ^. appOptions . optLogLevel) (envApp ^. appLog . alLogger)
+    . runTimedLogT (envApp ^. appOptions . L.logLevel) (envApp ^. appLog . alLogger)
     . flip execStateT appStateEmpty
     $ do
         logInfo $ show (envApp ^. appOptions)

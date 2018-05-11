@@ -3,59 +3,83 @@
 module App.Has where
 
 import Antiope.Env    (HasEnv (..))
-import App.AppEnv
 import App.Options
 import Control.Lens
+import Data.Function  (id)
 import Network.StatsD (StatsClient)
 
-instance HasEnv AppEnv where
-  environment = appEnvAws
+import qualified App.AppEnv as E
+import qualified App.Lens   as L
+
+instance HasEnv E.AppEnv where
+  environment = E.appEnvAws
 
 class HasStatsClient a where
   statsClient :: Lens' a StatsClient
 
+instance HasStatsClient StatsClient where
+  statsClient = id
+
 class HasKafkaConfig a where
   kafkaConfig :: Lens' a KafkaConfig
+
+instance HasKafkaConfig KafkaConfig where
+  kafkaConfig = id
 
 class HasStatsConfig a where
   statsConfig :: Lens' a StatsConfig
 
+instance HasStatsConfig StatsConfig where
+  statsConfig = id
+
 class HasStoreConfig a where
   storeConfig :: Lens' a StoreConfig
+
+instance HasStoreConfig StoreConfig where
+  storeConfig = id
 
 class HasAwsConfig a where
   awsConfig :: Lens' a AwsConfig
 
-instance HasStatsClient StatsClient where
-  statsClient = id
+instance HasAwsConfig AwsConfig where
+  awsConfig = id
 
-instance HasStatsClient AppEnv where
-  statsClient = appStatsClient
+class HasAppOptions a where
+  appOptions :: Lens' a AppOptions
 
-instance HasKafkaConfig AppEnv where
-  kafkaConfig = appOptions . kafkaConfig
+instance HasAppOptions AppOptions where
+  appOptions = id
 
-instance HasStatsConfig AppEnv where
-  statsConfig = appOptions . statsConfig
 
-instance HasAppLogger AppEnv where
-  appLogger = appEnv . appLog
 
-instance HasAwsConfig AppEnv where
-  awsConfig = appOptions . optAwsConfig
+instance HasStatsClient E.AppEnv where
+  statsClient = E.appStatsClient
 
-instance HasStoreConfig AppEnv where
-  storeConfig = appOptions . optStoreConfig
+instance HasKafkaConfig E.AppEnv where
+  kafkaConfig = E.appOptions . kafkaConfig
 
-instance HasKafkaConfig Options where
-  kafkaConfig = optKafkaConfig
+instance HasStatsConfig E.AppEnv where
+  statsConfig = E.appOptions . statsConfig
 
-instance HasStatsConfig Options where
-  statsConfig = optStatsConfig
 
-instance HasStoreConfig Options where
-  storeConfig = optStoreConfig
+instance E.HasAppLogger E.AppEnv where
+  appLogger = E.appEnv . E.appLog
 
-instance HasAwsConfig Options where
-  awsConfig = optAwsConfig
+instance HasAwsConfig E.AppEnv where
+  awsConfig = E.appOptions . awsConfig
+
+instance HasStoreConfig E.AppEnv where
+  storeConfig = E.appOptions . storeConfig
+
+instance HasKafkaConfig AppOptions where
+  kafkaConfig = L.kafkaConfig
+
+instance HasStatsConfig AppOptions where
+  statsConfig = L.statsConfig
+
+instance HasStoreConfig AppOptions where
+  storeConfig = L.storeConfig
+
+instance HasAwsConfig AppOptions where
+  awsConfig = L.awsConfig
 
