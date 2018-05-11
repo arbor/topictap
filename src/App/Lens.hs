@@ -6,3 +6,4 @@ import App.Options
 import Control.Lens
 
 makeFields ''KafkaConfig
+makeFields ''StatsConfig

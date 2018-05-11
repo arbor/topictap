@@ -17,6 +17,9 @@ class HasStatsClient a where
 class HasKafkaConfig a where
   kafkaConfig :: Lens' a KafkaConfig
 
+class HasStatsConfig a where
+  statsConfig :: Lens' a StatsConfig
+
 instance HasStatsClient StatsClient where
   statsClient = id
 

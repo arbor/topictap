@@ -34,10 +34,10 @@ data KafkaConfig = KafkaConfig
   } deriving (Show)
 
 data StatsConfig = StatsConfig
-  { _statsHost       :: HostName
-  , _statsPort       :: Int
-  , _statsTags       :: [StatsTag]
-  , _statsSampleRate :: SampleRate
+  { _statsConfigHost       :: HostName
+  , _statsConfigPort       :: Int
+  , _statsConfigTags       :: [StatsTag]
+  , _statsConfigSampleRate :: SampleRate
   } deriving (Show)
 
 data StoreConfig = StoreConfig
@@ -75,7 +75,6 @@ data DbConfig = DbConfig
   , _dbConfigDatabase :: Text
   } deriving (Eq, Show)
 
-makeClassy ''StatsConfig
 makeClassy ''AwsConfig
 makeClassy ''Options
 makeClassy ''StoreConfig
