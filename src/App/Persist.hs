@@ -1,12 +1,14 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module App.Persist
   ( uploadAllFiles
   ) where
 
-import App.AppState.Type
-import App.AWS.DynamoDB
-import App.AWS.S3                    (S3Location (..), putFile)
+import Antiope.Core                  (HasEnv, MonadAWS, runAWS, toText)
+import Antiope.DynamoDB              (TableName, attributeValue, avN, avS, dynamoPutItem)
+import Antiope.S3                    (BucketName (..), ObjectKey (..), S3Location (..), putFile)
+import App.AppState.Type             (FileCache (..), FileCacheEntry (..), fileCacheEmpty)
 import App.CancellationToken         (CancellationToken)
 import App.Options                   (HasAwsConfig (..), HasStoreConfig (..), awsConfig, uploadThreads)
 import App.ToSha256Text              (toSha256Text)
@@ -24,9 +26,6 @@ import Data.Time.Clock               (UTCTime)
 import Data.Time.Clock.POSIX         (utcTimeToPOSIXSeconds)
 import GHC.Int                       (Int64)
 import Kafka.Consumer                (Millis (..), Offset (..), PartitionId (..), Timestamp (..), TopicName (..))
-import Network.AWS                   (HasEnv, MonadAWS, runAWS)
-import Network.AWS.Data              (toText)
-import Network.AWS.S3.Types          (BucketName (..), ObjectKey (..))
 
 import qualified App.AppState.Lens     as L
 import qualified App.CancellationToken as CToken

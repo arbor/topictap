@@ -2,15 +2,15 @@
 
 module App.Options where
 
-import App.AWS.DynamoDB      (TableName)
-import App.Types             (Seconds (..))
+import Antiope.Core         (FromText (..), Region (..), fromText)
+import Antiope.DynamoDB     (TableName)
+import Antiope.S3           (BucketName)
+import App.Types            (Seconds (..))
 import Control.Lens
-import Control.Monad.Logger  (LogLevel (..))
-import Data.Semigroup        ((<>))
-import Network.AWS.Data.Text (FromText (..), fromText)
-import Network.AWS.S3.Types  (BucketName, Region (..))
-import Network.Socket        (HostName)
-import Network.StatsD        (SampleRate (..))
+import Control.Monad.Logger (LogLevel (..))
+import Data.Semigroup       ((<>))
+import Network.Socket       (HostName)
+import Network.StatsD       (SampleRate (..))
 
 import Options.Applicative
 import Text.Read           (readEither)

@@ -4,10 +4,10 @@
 module App.AppEnv
 where
 
+import Antiope.Env    (Env, HasEnv (..))
 import App.Options
 import Arbor.Logger   (LogLevel, TimedFastLogger)
 import Control.Lens
-import Network.AWS    (Env, HasEnv (..))
 import Network.StatsD (StatsClient)
 
 data AppLogger = AppLogger

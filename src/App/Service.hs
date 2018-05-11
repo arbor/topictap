@@ -5,17 +5,15 @@ module App.Service
   ) where
 
 import App
-import App.Codec
+import App.Codec                            (decodeMessage)
 import Conduit
-import Control.Lens
-import Data.Avro.Schema                     ()
-import Data.Avro.Types                      ()
+import Control.Lens                         (use, (%=), (%~), (&), (+=), (.~), (^.))
 import Data.ByteString                      (ByteString)
 import Data.Monoid                          ((<>))
-import HaskellWorks.Data.Conduit.Combinator
-import Kafka.Avro
-import Kafka.Conduit.Source
-import System.IO
+import HaskellWorks.Data.Conduit.Combinator (effectC)
+import Kafka.Avro                           (SchemaRegistry)
+import Kafka.Conduit.Source                 (ConsumerRecord (..), Offset (..), PartitionId (..), TopicName (..))
+import System.IO                            (Handle, IOMode (..), hClose, hFlush, openFile)
 import Text.Printf
 
 import qualified App.AppState.Lens       as L
@@ -77,9 +75,8 @@ outputStreamForMessage parentPath msg = do
             }
       L.fileCache . L.entries %= M.insert (crTopic msg, crPartition msg) entry
       return zos
-  where TopicName topicName     = crTopic msg
-        PartitionId partitionId = crPartition msg
-        dirPath                 = parentPath <> "/" <> topicName
+  where PartitionId partitionId = crPartition msg
+        dirPath                 = parentPath <> "/" <> unTopicName (crTopic msg)
 
 writeDecodedMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m ()
 writeDecodedMessage parentPath msg = do

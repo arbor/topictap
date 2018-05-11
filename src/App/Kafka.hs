@@ -65,12 +65,17 @@ mkProducer = do
            <> KSnk.logLevel (kafkaLogLevel (logs ^. alLogLevel))
            <> KSnk.setCallback (logCallback   (\l s1 s2 -> pushLogMessage (logs ^. alLogger) (kafkaLogLevelToLogLevel $ toEnum l) ("[" <> s1 <> "] " <> s2)))
            <> KSnk.setCallback (errorCallback (\e s -> pushLogMessage (logs ^. alLogger) LevelError ("[" <> show e <> "] " <> s)))
-           <> KSnk.setCallback (deliveryErrorsCallback (logAndDieHard (logs ^. alLogger)))
+           <> KSnk.setCallback (deliveryCallback (handleDeliveryReport (logs ^. alLogger)))
            <> KSnk.extraProps (M.singleton "linger.ms"                 "100")
            <> KSnk.extraProps (M.singleton "message.send.max.retries"  "0"  )
            <> KSnk.compression Gzip
       prod = newProducer props >>= either throwM return
   snd <$> allocate prod closeProducer
+
+handleDeliveryReport :: TimedFastLogger -> DeliveryReport -> IO ()
+handleDeliveryReport _ (DeliverySuccess _ _)     = pure ()
+handleDeliveryReport lgr (DeliveryFailure _ err) = logAndDieHard lgr err
+handleDeliveryReport lgr (NoMessageError err)    = logAndDieHard lgr err
 
 logAndDieHard :: TimedFastLogger -> KafkaError -> IO ()
 logAndDieHard lgr err = do

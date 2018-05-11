@@ -7,36 +7,38 @@ module Main
   , onRebalance
   ) where
 
+import Antiope.Env                          (mkEnv)
 import App
-import App.AWS.Env
 import App.CancellationToken                (newCancellationToken)
-import App.Conduit.Time
-import App.Kafka
-import App.Persist
-import App.Service
+import App.Conduit.Time                     (sampleC)
+import App.Kafka                            (mkConsumer)
+import App.Persist                          (uploadAllFiles)
+import App.Service                          (handleStream)
 import Arbor.Logger
 import Conduit
-import Control.Exception
-import Control.Lens
-import Control.Monad                        (void)
+import Control.Exception                    (IOException, bracket, catch)
+import Control.Lens                         (use, (.=), (<&>), (^.))
+import Control.Monad                        (forM_, unless, void, when)
 import Control.Monad.Catch                  (MonadThrow)
-import Control.Monad.State
+import Control.Monad.State                  (MonadState)
 import Control.Monad.Trans.Class            (lift)
 import Data.Maybe                           (catMaybes)
 import Data.Semigroup                       ((<>))
-import HaskellWorks.Data.Conduit.Combinator
+import HaskellWorks.Data.Conduit.Combinator (effectC, effectC', rightC)
 import Kafka.Avro                           (schemaRegistry)
-import Kafka.Conduit.Sink
 import Kafka.Conduit.Source
 import Network.StatsD                       as S
-import System.Directory
-import System.Environment
-import System.IO.Error
+import System.Directory                     (createDirectoryIfMissing, removeDirectoryRecursive)
+import System.Environment                   (getProgName)
+import System.IO.Error                      (ioeGetErrorType, isDoesNotExistErrorType)
 
-import qualified App.AppState.Lens as L
-import qualified Data.Map          as M
-import qualified Data.Set          as S
-import qualified Data.Text         as T
+import qualified Antiope.Env          as AWS
+import qualified App.AppState.Lens    as L
+import qualified Arbor.Logger         as Log
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Map             as M
+import qualified Data.Set             as S
+import qualified Data.Text            as T
 
 reportProgress :: (MonadLogger m, MonadStats m, MonadState AppState m) => m ()
 reportProgress = do
@@ -80,8 +82,9 @@ main = do
 
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
-      envAws <- mkEnv (opt ^. awsRegion) logLvl lgr
-      let envApp = AppEnv opt stats (AppLogger lgr logLvl) envAws
+      let envLogger = AppLogger lgr logLvl
+      envAws <- mkEnv (opt ^. awsRegion) (logAWS envLogger)
+      let envApp = AppEnv opt stats envLogger envAws
 
       void . runApplication envApp $ do
         let inputTopics       = opt ^. optInputTopics
@@ -134,3 +137,17 @@ mkStatsTags statsConf = do
   return $ envTags <> (statsConf ^. statsTags <&> toTag)
   where
     toTag (StatsTag (k, v)) = S.tag k v
+
+logAWS :: AppLogger -> AWS.LogLevel -> LBS.ByteString -> IO ()
+logAWS lgr awsLvl msg = do
+  let lvl = lgr ^. alLogLevel
+  when (logLevelToAWS lvl >= awsLvl)
+    $ pushLogMessage (lgr ^. alLogger) lvl msg
+
+logLevelToAWS :: Log.LogLevel -> AWS.LogLevel
+logLevelToAWS l = case l of
+  Log.LevelError -> AWS.Error
+  Log.LevelWarn  -> AWS.Error
+  Log.LevelInfo  -> AWS.Error
+  Log.LevelDebug -> AWS.Info
+  _              -> AWS.Trace
