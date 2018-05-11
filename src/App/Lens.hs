@@ -2,9 +2,11 @@
 
 module App.Lens where
 
+import App.AppEnv
 import App.Options
 import Control.Lens
 
+makeFields ''AppEnv
 makeFields ''AwsConfig
 makeFields ''KafkaConfig
 makeFields ''AppOptions

@@ -12,7 +12,7 @@ import qualified App.AppEnv as E
 import qualified App.Lens   as L
 
 instance HasEnv E.AppEnv where
-  environment = E.appEnvAws
+  environment = L.aws
 
 class HasStatsClient a where
   statsClient :: Lens' a StatsClient
@@ -53,23 +53,23 @@ instance HasAppOptions AppOptions where
 
 
 instance HasStatsClient E.AppEnv where
-  statsClient = E.appStatsClient
+  statsClient = L.statsClient
 
 instance HasKafkaConfig E.AppEnv where
-  kafkaConfig = E.appOptions . kafkaConfig
+  kafkaConfig = L.options . kafkaConfig
 
 instance HasStatsConfig E.AppEnv where
-  statsConfig = E.appOptions . statsConfig
+  statsConfig = L.options . statsConfig
 
 
 instance E.HasAppLogger E.AppEnv where
-  appLogger = E.appEnv . E.appLog
+  appLogger = L.log
 
 instance HasAwsConfig E.AppEnv where
-  awsConfig = E.appOptions . awsConfig
+  awsConfig = L.options . awsConfig
 
 instance HasStoreConfig E.AppEnv where
-  storeConfig = E.appOptions . storeConfig
+  storeConfig = L.options . storeConfig
 
 instance HasKafkaConfig AppOptions where
   kafkaConfig = L.kafkaConfig

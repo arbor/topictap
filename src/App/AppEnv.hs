@@ -16,11 +16,10 @@ data AppLogger = AppLogger
   }
 
 data AppEnv = AppEnv
-  { _appOptions     :: AppOptions
-  , _appStatsClient :: StatsClient
-  , _appLog         :: AppLogger
-  , _appEnvAws      :: Env
+  { _appEnvOptions     :: AppOptions
+  , _appEnvStatsClient :: StatsClient
+  , _appEnvLog         :: AppLogger
+  , _appEnvAws         :: Env
   }
 
 makeClassy ''AppLogger
-makeClassy ''AppEnv

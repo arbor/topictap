@@ -60,14 +60,14 @@ newtype Application a = Application
 deriving instance MonadApp Application
 
 instance MonadStats Application where
-  getStatsClient = reader _appStatsClient
+  getStatsClient = reader _appEnvStatsClient
 
 runApplication :: AppEnv -> Application () -> IO AppState
 runApplication envApp f =
   runResourceT
     . runAWS envApp
-    . runTimedLogT (envApp ^. appOptions . L.logLevel) (envApp ^. appLog . alLogger)
+    . runTimedLogT (envApp ^. L.options . L.logLevel) (envApp ^. L.log . alLogger)
     . flip execStateT appStateEmpty
     $ do
-        logInfo $ show (envApp ^. appOptions)
+        logInfo $ show (envApp ^. L.options)
         runReaderT (unApp f) envApp
