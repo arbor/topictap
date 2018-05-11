@@ -85,7 +85,7 @@ main = do
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
       let envLogger = AppLogger lgr logLvl
-      envAws <- mkEnv (opt ^. awsRegion) (logAWS envLogger)
+      envAws <- mkEnv (opt ^. H.awsConfig . L.region) (logAWS envLogger)
       let envApp = AppEnv opt stats envLogger envAws
 
       void . runApplication envApp $ do

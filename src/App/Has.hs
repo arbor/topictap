@@ -23,6 +23,9 @@ class HasStatsConfig a where
 class HasStoreConfig a where
   storeConfig :: Lens' a StoreConfig
 
+class HasAwsConfig a where
+  awsConfig :: Lens' a AwsConfig
+
 instance HasStatsClient StatsClient where
   statsClient = id
 

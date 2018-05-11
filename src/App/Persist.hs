@@ -10,7 +10,6 @@ import Antiope.DynamoDB              (TableName, attributeValue, avN, avS, dynam
 import Antiope.S3                    (BucketName (..), ObjectKey (..), S3Location (..), putFile)
 import App.AppState.Type             (FileCache (..), FileCacheEntry (..), fileCacheEmpty)
 import App.CancellationToken         (CancellationToken)
-import App.Options                   (HasAwsConfig (..), awsConfig, uploadThreads)
 import App.ToSha256Text              (toSha256Text)
 import Control.Concurrent.Async.Pool (mapTasks, withTaskGroup)
 import Control.Lens                  (use, view, (&), (.=), (?~), (^.))
@@ -39,7 +38,7 @@ import qualified System.IO.Streams     as IO
 -- The file handles will be closed and files must not be used after this function returns.
 -- The FileCache will be emptied in State.
 uploadAllFiles :: ( MonadState s m, L.HasFileCache s FileCache
-                  , MonadReader r m, HasAwsConfig r, H.HasStoreConfig r
+                  , MonadReader r m, H.HasAwsConfig r, H.HasStoreConfig r
                   , HasEnv r, MonadAWS m)
                => CancellationToken
                -> UTCTime
@@ -52,7 +51,7 @@ uploadAllFiles ctoken timestamp = do
   where closeEntry e = IO.write Nothing (e ^. L.outputStream) >> pure e
 
 uploadFiles :: ( MonadAWS m, HasEnv r
-               , MonadReader r m, HasAwsConfig r, H.HasStoreConfig r)
+               , MonadReader r m, H.HasAwsConfig r, H.HasStoreConfig r)
             => CancellationToken
             -> UTCTime
             -> [FileCacheEntry]
@@ -61,7 +60,7 @@ uploadFiles ctoken timestamp fs = do
   aws <- ask
   bkt <- view $ H.storeConfig . L.bucket
   tbl <- view $ H.storeConfig . L.index
-  par <- view (awsConfig . uploadThreads)
+  par <- view $ H.awsConfig . L.uploadThreads
   liftIO . void $ mapConcurrently' par (go aws bkt tbl) fs
   where
     go e b t file = do

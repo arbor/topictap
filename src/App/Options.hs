@@ -57,8 +57,8 @@ data Options = Options
   } deriving (Show)
 
 data AwsConfig = AwsConfig
-  { _awsRegion     :: Region
-  , _uploadThreads :: Int
+  { _awsConfigRegion        :: Region
+  , _awsConfigUploadThreads :: Int
   } deriving (Show)
 
 newtype Password = Password
@@ -75,7 +75,6 @@ data DbConfig = DbConfig
   , _dbConfigDatabase :: Text
   } deriving (Eq, Show)
 
-makeClassy ''AwsConfig
 makeClassy ''Options
 
 statsConfigParser :: Parser StatsConfig
