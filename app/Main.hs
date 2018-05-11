@@ -34,6 +34,7 @@ import System.IO.Error                      (ioeGetErrorType, isDoesNotExistErro
 
 import qualified Antiope.Env          as AWS
 import qualified App.AppState.Lens    as L
+import qualified App.Has              as H
 import qualified App.Lens             as L
 import qualified Arbor.Logger         as Log
 import qualified Data.ByteString.Lazy as LBS
@@ -115,7 +116,7 @@ main = do
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
           .| rightC (handleStream sr (opt ^. optStagingDirectory))
-          .| sampleC (opt ^. storeUploadInterval)
+          .| sampleC (opt ^. H.storeConfig . L.uploadInterval)
           .| effectC' (logInfo "Uploading files...")
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' (logInfo "Uploading completed")

@@ -20,6 +20,9 @@ class HasKafkaConfig a where
 class HasStatsConfig a where
   statsConfig :: Lens' a StatsConfig
 
+class HasStoreConfig a where
+  storeConfig :: Lens' a StoreConfig
+
 instance HasStatsClient StatsClient where
   statsClient = id
 

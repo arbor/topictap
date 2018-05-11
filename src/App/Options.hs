@@ -41,9 +41,9 @@ data StatsConfig = StatsConfig
   } deriving (Show)
 
 data StoreConfig = StoreConfig
-  { _storeBucket         :: BucketName
-  , _storeIndex          :: TableName
-  , _storeUploadInterval :: Seconds
+  { _storeConfigBucket         :: BucketName
+  , _storeConfigIndex          :: TableName
+  , _storeConfigUploadInterval :: Seconds
   } deriving (Show)
 
 data Options = Options
@@ -77,7 +77,6 @@ data DbConfig = DbConfig
 
 makeClassy ''AwsConfig
 makeClassy ''Options
-makeClassy ''StoreConfig
 
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig

@@ -7,3 +7,4 @@ import Control.Lens
 
 makeFields ''KafkaConfig
 makeFields ''StatsConfig
+makeFields ''StoreConfig
