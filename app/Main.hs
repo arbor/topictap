@@ -34,6 +34,8 @@ import System.IO.Error                      (ioeGetErrorType, isDoesNotExistErro
 
 import qualified Antiope.Env          as AWS
 import qualified App.AppState.Lens    as L
+import qualified App.Has              as H
+import qualified App.Lens             as L
 import qualified Arbor.Logger         as Log
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Map             as M
@@ -74,21 +76,21 @@ main :: IO ()
 main = do
   opt <- parseOptions
   progName <- T.pack <$> getProgName
-  let logLvl    = opt ^. optLogLevel
-  let kafkaConf = opt ^. optKafkaConfig
-  let statsConf = opt ^. optStatsConfig
+  let logLvl    = opt ^. L.logLevel
+  let kafkaConf = opt ^. L.kafkaConfig
+  let statsConf = opt ^. L.statsConfig
 
   ctoken <- newCancellationToken
 
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
       let envLogger = AppLogger lgr logLvl
-      envAws <- mkEnv (opt ^. awsRegion) (logAWS envLogger)
+      envAws <- mkEnv (opt ^. H.awsConfig . L.region) (logAWS envLogger)
       let envApp = AppEnv opt stats envLogger envAws
 
       void . runApplication envApp $ do
-        let inputTopics       = opt ^. optInputTopics
-        let stagingDirectory  = opt ^. optStagingDirectory
+        let inputTopics       = opt ^. L.inputTopics
+        let stagingDirectory  = opt ^. L.stagingDirectory
 
         logInfo "Creating Kafka Consumer on the following topics:"
         forM_ inputTopics $ \inputTopic -> logInfo $ "  " <> show inputTopic
@@ -103,18 +105,18 @@ main = do
             throwM e
         liftIO $ createDirectoryIfMissing True readyDirectory
 
-        consumer <- mkConsumer Nothing (opt ^. optInputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
+        consumer <- mkConsumer Nothing (opt ^. L.inputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
 
         logInfo "Instantiating Schema Registry"
-        sr <- schemaRegistry (kafkaConf ^. schemaRegistryAddress)
+        sr <- schemaRegistry (kafkaConf ^. L.schemaRegistryAddress)
 
         logInfo "Running Kafka Consumer"
         runConduit $
-          kafkaSourceNoClose consumer (kafkaConf ^. pollTimeoutMs)
+          kafkaSourceNoClose consumer (kafkaConf ^. L.pollTimeoutMs)
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
-          .| rightC (handleStream sr (opt ^. optStagingDirectory))
-          .| sampleC (opt ^. storeUploadInterval)
+          .| rightC (handleStream sr (opt ^. L.stagingDirectory))
+          .| sampleC (opt ^. H.storeConfig . L.uploadInterval)
           .| effectC' (logInfo "Uploading files...")
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' (logInfo "Uploading completed")
@@ -127,14 +129,14 @@ main = do
 withStatsClient :: AppName -> StatsConfig -> (StatsClient -> IO ()) -> IO ()
 withStatsClient appName statsConf f = do
   globalTags <- mkStatsTags statsConf
-  let statsOpts = DogStatsSettings (statsConf ^. statsHost) (statsConf ^. statsPort)
+  let statsOpts = DogStatsSettings (statsConf ^. L.host) (statsConf ^. L.port)
   bracket (createStatsClient statsOpts (MetricName appName) globalTags) closeStatsClient f
 
 mkStatsTags :: StatsConfig -> IO [Tag]
 mkStatsTags statsConf = do
   deplId <- envTag "TASK_DEPLOY_ID" "deploy_id"
   let envTags = catMaybes [deplId]
-  return $ envTags <> (statsConf ^. statsTags <&> toTag)
+  return $ envTags <> (statsConf ^. L.tags <&> toTag)
   where
     toTag (StatsTag (k, v)) = S.tag k v
 
