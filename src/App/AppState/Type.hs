@@ -7,15 +7,19 @@ import qualified Data.ByteString   as BS
 import qualified Data.Map          as M
 import qualified System.IO.Streams as IO
 
+data BackupEntry = BackupEntry
+  { _backupEntryFileName       :: FilePath
+  , _backupEntryOffsetFirst    :: Offset
+  , _backupEntryTimestampFirst :: Timestamp
+  , _backupEntryOffsetMax      :: Offset
+  , _backupEntryTimestampLast  :: Timestamp
+  , _backupEntryTopicName      :: TopicName
+  , _backupEntryPartitionId    :: PartitionId
+  }
+
 data FileCacheEntry = FileCacheEntry
-  { _fileCacheEntryFileName       :: FilePath
-  , _fileCacheEntryOffsetFirst    :: Offset
-  , _fileCacheEntryTimestampFirst :: Timestamp
-  , _fileCacheEntryOffsetMax      :: Offset
-  , _fileCacheEntryTimestampLast  :: Timestamp
-  , _fileCacheEntryTopicName      :: TopicName
-  , _fileCacheEntryPartitionId    :: PartitionId
-  , _fileCacheEntryOutputStream   :: IO.OutputStream BS.ByteString
+  { _fileCacheEntryBackupEntry  :: BackupEntry
+  , _fileCacheEntryOutputStream :: IO.OutputStream BS.ByteString
   }
 
 newtype FileCache = FileCache

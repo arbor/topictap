@@ -88,7 +88,6 @@ library:
   - App.AppEnv
   - App.AppError
   - App.Application
-  - App.AppState.Lens
   - App.AppState.Type
   - App.CancellationToken
   - App.Codec
