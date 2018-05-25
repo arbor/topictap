@@ -31,7 +31,7 @@ import qualified App.Lens as L
 
 type AppName = Text
 
-class ( MonadReader AppEnv m
+class ( MonadReader (AppEnv o) m
       , MonadState AppState m
       , MonadLogger m
       , MonadStats m
@@ -39,10 +39,10 @@ class ( MonadReader AppEnv m
       , MonadResource m
       , MonadThrow m
       , MonadCatch m
-      , MonadIO m) => MonadApp m where
+      , MonadIO m) => MonadApp o m where
 
-newtype Application a = Application
-  { unApp :: ReaderT AppEnv (StateT AppState (LoggingT AWS)) a
+newtype Application o a = Application
+  { unApp :: ReaderT (AppEnv o) (StateT AppState (LoggingT AWS)) a
   } deriving ( Functor
              , Applicative
              , Monad
@@ -51,18 +51,18 @@ newtype Application a = Application
              , MonadThrow
              , MonadCatch
              , MonadMask
-             , MonadReader AppEnv
+             , MonadReader (AppEnv o)
              , MonadState AppState
              , MonadAWS
              , MonadLogger
              , MonadResource)
 
-deriving instance MonadApp Application
+deriving instance MonadApp o (Application o)
 
-instance MonadStats Application where
+instance MonadStats (Application o) where
   getStatsClient = reader _appEnvStatsClient
 
-runApplication :: AppEnv -> Application () -> IO AppState
+runApplication :: (Show o, L.HasLogLevel o LogLevel) => AppEnv o -> Application o () -> IO AppState
 runApplication envApp f =
   runResourceT
     . runAWS envApp

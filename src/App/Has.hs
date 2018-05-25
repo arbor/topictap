@@ -12,7 +12,7 @@ import Network.StatsD (StatsClient)
 import qualified App.AppEnv as E
 import qualified App.Lens   as L
 
-instance HasEnv E.AppEnv where
+instance HasEnv (E.AppEnv o) where
   environment = L.aws
 
 makeClassy ''AppLogger
@@ -23,22 +23,22 @@ makeClassy ''StatsClient
 makeClassy ''StatsConfig
 makeClassy ''StoreConfig
 
-instance HasStatsClient E.AppEnv where
+instance HasStatsClient (E.AppEnv o) where
   statsClient = L.statsClient
 
-instance HasKafkaConfig E.AppEnv where
+instance HasKafkaConfig o => HasKafkaConfig (E.AppEnv o) where
   kafkaConfig = L.options . kafkaConfig
 
-instance HasStatsConfig E.AppEnv where
+instance HasStatsConfig o => HasStatsConfig (E.AppEnv o) where
   statsConfig = L.options . statsConfig
 
-instance HasAppLogger E.AppEnv where
+instance HasAppLogger (E.AppEnv o) where
   appLogger = L.log
 
-instance HasAwsConfig E.AppEnv where
+instance HasAwsConfig o => HasAwsConfig (E.AppEnv o) where
   awsConfig = L.options . awsConfig
 
-instance HasStoreConfig E.AppEnv where
+instance HasStoreConfig o => HasStoreConfig (E.AppEnv o) where
   storeConfig = L.options . storeConfig
 
 instance HasKafkaConfig AppOptions where
