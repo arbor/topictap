@@ -98,6 +98,9 @@ library:
   - App.Kafka
   - App.Lens
   - App.Options
+  - App.Options.Commands
+  - App.Options.Commands.Service
+  - App.Options.Types
   - App.Persist
   - App.Service
   - App.ToSha256Text

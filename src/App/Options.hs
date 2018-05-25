@@ -1,74 +1,17 @@
 module App.Options where
 
 import Antiope.Core         (FromText (..), Region (..), fromText)
-import Antiope.DynamoDB     (TableName)
-import Antiope.S3           (BucketName)
+import App.Options.Types
 import App.Types            (Seconds (..))
 import Control.Monad.Logger (LogLevel (..))
 import Data.Semigroup       ((<>))
-import Data.Text            (Text)
 import Kafka.Consumer.Types
 import Kafka.Types
-import Network.Socket       (HostName)
 import Network.StatsD       (SampleRate (..))
 import Options.Applicative
 import Text.Read            (readEither)
 
 import qualified Data.Text as T
-
-newtype StatsTag = StatsTag (Text, Text) deriving (Show, Eq)
-
-data KafkaConfig = KafkaConfig
-  { _kafkaConfigBroker                :: BrokerAddress
-  , _kafkaConfigSchemaRegistryAddress :: String
-  , _kafkaConfigPollTimeoutMs         :: Timeout
-  , _kafkaConfigQueuedMaxMsgKBytes    :: Int
-  , _kafkaConfigConsumerGroupId       :: ConsumerGroupId
-  , _kafkaConfigDebugOpts             :: String
-  , _kafkaConfigCommitPeriodSec       :: Int
-  } deriving (Show)
-
-data StatsConfig = StatsConfig
-  { _statsConfigHost       :: HostName
-  , _statsConfigPort       :: Int
-  , _statsConfigTags       :: [StatsTag]
-  , _statsConfigSampleRate :: SampleRate
-  } deriving (Show)
-
-data StoreConfig = StoreConfig
-  { _storeConfigBucket         :: BucketName
-  , _storeConfigIndex          :: TableName
-  , _storeConfigUploadInterval :: Seconds
-  } deriving (Show)
-
-data AppOptions = AppOptions
-  { _appOptionsLogLevel         :: LogLevel
-  , _appOptionsInputTopics      :: [TopicName]
-  , _appOptionsStagingDirectory :: FilePath
-  , _appOptionsAwsConfig        :: AwsConfig
-  , _appOptionsKafkaConfig      :: KafkaConfig
-  , _appOptionsStatsConfig      :: StatsConfig
-  , _appOptionsStoreConfig      :: StoreConfig
-  } deriving (Show)
-
-data AwsConfig = AwsConfig
-  { _awsConfigRegion        :: Region
-  , _awsConfigUploadThreads :: Int
-  } deriving (Show)
-
-newtype Password = Password
-  { _passwordValue :: Text
-  } deriving (Read, Eq)
-
-instance Show Password where
-  show _ = "************"
-
-data DbConfig = DbConfig
-  { _dbConfigHost     :: Text
-  , _dbConfigUser     :: Text
-  , _dbConfigPassword :: Password
-  , _dbConfigDatabase :: Text
-  } deriving (Eq, Show)
 
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig
@@ -177,8 +120,8 @@ storeConfigParser = StoreConfig
         )
       )
 
-optParser :: Parser AppOptions
-optParser = AppOptions
+optParser :: Parser CmdServiceOptions
+optParser = CmdServiceOptions
   <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
       (  long "log-level"
       <> metavar "LOG_LEVEL"
@@ -226,12 +169,12 @@ string2Tags s = StatsTag . splitTag <$> splitTags
     splitTags = T.split (==',') (T.pack s)
     splitTag t = T.drop 1 <$> T.break (==':') t
 
-optParserInfo :: ParserInfo AppOptions
+optParserInfo :: ParserInfo CmdServiceOptions
 optParserInfo = info (helper <*> optParser)
   (  fullDesc
   <> progDesc "Dump avro data from kafka topic to S3"
   <> header "Kafka to S3"
   )
 
-parseOptions :: IO AppOptions
+parseOptions :: IO CmdServiceOptions
 parseOptions = execParser optParserInfo

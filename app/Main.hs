@@ -12,6 +12,7 @@ import App
 import App.CancellationToken                (newCancellationToken)
 import App.Conduit.Time                     (sampleC)
 import App.Kafka                            (mkConsumer)
+import App.Options.Types
 import App.Persist                          (uploadAllFiles)
 import App.Service                          (handleStream)
 import Arbor.Logger
