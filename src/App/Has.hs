@@ -3,11 +3,12 @@
 
 module App.Has where
 
-import Antiope.Env    (HasEnv (..))
+import Antiope.Env        (HasEnv (..))
 import App.AppEnv
-import App.Options
+import App.Commands.Types
+import App.Options.Types
 import Control.Lens
-import Network.StatsD (StatsClient)
+import Network.StatsD     (StatsClient)
 
 import qualified App.AppEnv as E
 import qualified App.Lens   as L

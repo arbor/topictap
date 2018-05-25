@@ -1,10 +1,9 @@
-module App.Options where
+module App.Options.Types where
 
 import Antiope.Core         (FromText (..), Region (..), fromText)
 import Antiope.DynamoDB     (TableName)
 import Antiope.S3           (BucketName)
 import App.Types            (Seconds (..))
-import Control.Monad.Logger (LogLevel (..))
 import Data.Semigroup       ((<>))
 import Data.Text            (Text)
 import Kafka.Consumer.Types
@@ -39,16 +38,6 @@ data StoreConfig = StoreConfig
   { _storeConfigBucket         :: BucketName
   , _storeConfigIndex          :: TableName
   , _storeConfigUploadInterval :: Seconds
-  } deriving (Show)
-
-data AppOptions = AppOptions
-  { _appOptionsLogLevel         :: LogLevel
-  , _appOptionsInputTopics      :: [TopicName]
-  , _appOptionsStagingDirectory :: FilePath
-  , _appOptionsAwsConfig        :: AwsConfig
-  , _appOptionsKafkaConfig      :: KafkaConfig
-  , _appOptionsStatsConfig      :: StatsConfig
-  , _appOptionsStoreConfig      :: StoreConfig
   } deriving (Show)
 
 data AwsConfig = AwsConfig
@@ -177,30 +166,6 @@ storeConfigParser = StoreConfig
         )
       )
 
-optParser :: Parser AppOptions
-optParser = AppOptions
-  <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
-      (  long "log-level"
-      <> metavar "LOG_LEVEL"
-      <> showDefault <> value LevelInfo
-      <> help "Log level"
-      )
-  <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
-  <*> strOption
-      (  long "staging-directory"
-      <> metavar "PATH"
-      <> help "Staging directory where generated files are stored and scheduled for upload to S3"
-      )
-  <*> awsConfigParser
-  <*> kafkaConfigParser
-  <*> statsConfigParser
-  <*> storeConfigParser
-  where
-    topicOption = strOption
-      (  long "topic"
-      <> metavar "TOPIC"
-      <> help "Input topic.  Multiple topics can be supplied by repeating the flag or comma/space separating the topic names"
-      )
 
 commaToSpace :: Char -> Char
 commaToSpace ',' = ' '
@@ -225,13 +190,3 @@ string2Tags s = StatsTag . splitTag <$> splitTags
   where
     splitTags = T.split (==',') (T.pack s)
     splitTag t = T.drop 1 <$> T.break (==':') t
-
-optParserInfo :: ParserInfo AppOptions
-optParserInfo = info (helper <*> optParser)
-  (  fullDesc
-  <> progDesc "Dump avro data from kafka topic to S3"
-  <> header "Kafka to S3"
-  )
-
-parseOptions :: IO AppOptions
-parseOptions = execParser optParserInfo

@@ -4,7 +4,8 @@ module App.Service
   ( handleStream
   ) where
 
-import App
+import App.Application
+import App.AppState.Type
 import App.Codec                            (decodeMessage)
 import Conduit
 import Control.Lens                         (use, (%=), (%~), (&), (+=), (.~), (^.))
