@@ -4,7 +4,6 @@ import Antiope.Core         (Region (..))
 import Antiope.DynamoDB     (TableName)
 import Antiope.S3           (BucketName)
 import App.Types            (Seconds (..))
-import Control.Monad.Logger (LogLevel (..))
 import Data.Text            (Text)
 import Kafka.Consumer.Types
 import Kafka.Types
@@ -34,16 +33,6 @@ data StoreConfig = StoreConfig
   { _storeConfigBucket         :: BucketName
   , _storeConfigIndex          :: TableName
   , _storeConfigUploadInterval :: Seconds
-  } deriving (Show)
-
-data CmdServiceOptions = CmdServiceOptions
-  { _cmdServiceOptionsLogLevel         :: LogLevel
-  , _cmdServiceOptionsInputTopics      :: [TopicName]
-  , _cmdServiceOptionsStagingDirectory :: FilePath
-  , _cmdServiceOptionsAwsConfig        :: AwsConfig
-  , _cmdServiceOptionsKafkaConfig      :: KafkaConfig
-  , _cmdServiceOptionsStatsConfig      :: StatsConfig
-  , _cmdServiceOptionsStoreConfig      :: StoreConfig
   } deriving (Show)
 
 data AwsConfig = AwsConfig

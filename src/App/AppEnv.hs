@@ -4,10 +4,10 @@
 
 module App.AppEnv where
 
-import Antiope.Env       (Env)
-import App.Options.Types
-import Arbor.Logger      (LogLevel, TimedFastLogger)
-import Network.StatsD    (StatsClient)
+import Antiope.Env                  (Env)
+import App.Options.Commands.Service
+import Arbor.Logger                 (LogLevel, TimedFastLogger)
+import Network.StatsD               (StatsClient)
 
 data AppLogger = AppLogger
   { _appLoggerLogger   :: TimedFastLogger

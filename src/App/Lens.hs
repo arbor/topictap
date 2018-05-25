@@ -3,6 +3,7 @@
 module App.Lens where
 
 import App.AppEnv
+import App.Options.Commands.Service
 import App.Options.Types
 import Control.Lens
 

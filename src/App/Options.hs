@@ -1,15 +1,16 @@
 module App.Options where
 
-import Antiope.Core         (FromText (..), Region (..), fromText)
+import Antiope.Core                 (FromText (..), Region (..), fromText)
+import App.Options.Commands.Service
 import App.Options.Types
-import App.Types            (Seconds (..))
-import Control.Monad.Logger (LogLevel (..))
-import Data.Semigroup       ((<>))
+import App.Types                    (Seconds (..))
+import Control.Monad.Logger         (LogLevel (..))
+import Data.Semigroup               ((<>))
 import Kafka.Consumer.Types
 import Kafka.Types
-import Network.StatsD       (SampleRate (..))
+import Network.StatsD               (SampleRate (..))
 import Options.Applicative
-import Text.Read            (readEither)
+import Text.Read                    (readEither)
 
 import qualified Data.Text as T
 
