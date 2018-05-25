@@ -7,7 +7,7 @@ module App.Codec
   , decodeAvro
   ) where
 
-import App
+import App.AppError
 import Control.Arrow          (left)
 import Control.Lens           ((<&>))
 import Control.Monad.Catch    (MonadThrow)

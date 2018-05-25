@@ -85,7 +85,6 @@ library:
   - -Wincomplete-uni-patterns
   - -Wredundant-constraints
   exposed-modules:
-  - App
   - App.AppEnv
   - App.AppError
   - App.Application
@@ -97,7 +96,10 @@ library:
   - App.Has
   - App.Kafka
   - App.Lens
-  - App.Options
+  - App.Commands
+  - App.Commands.Service
+  - App.Commands.Types
+  - App.Options.Types
   - App.Persist
   - App.Service
   - App.ToSha256Text
