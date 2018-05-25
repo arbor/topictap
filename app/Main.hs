@@ -142,9 +142,9 @@ mkStatsTags statsConf = do
 
 logAWS :: AppLogger -> AWS.LogLevel -> LBS.ByteString -> IO ()
 logAWS lgr awsLvl msg = do
-  let lvl = lgr ^. alLogLevel
+  let lvl = lgr ^. L.logLevel
   when (logLevelToAWS lvl >= awsLvl)
-    $ pushLogMessage (lgr ^. alLogger) lvl msg
+    $ pushLogMessage (lgr ^. L.logger) lvl msg
 
 logLevelToAWS :: Log.LogLevel -> AWS.LogLevel
 logLevelToAWS l = case l of

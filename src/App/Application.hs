@@ -66,7 +66,7 @@ runApplication :: AppEnv -> Application () -> IO AppState
 runApplication envApp f =
   runResourceT
     . runAWS envApp
-    . runTimedLogT (envApp ^. L.options . L.logLevel) (envApp ^. L.log . alLogger)
+    . runTimedLogT (envApp ^. L.options . L.logLevel) (envApp ^. L.log . L.logger)
     . flip execStateT appStateEmpty
     $ do
         logInfo $ show (envApp ^. L.options)

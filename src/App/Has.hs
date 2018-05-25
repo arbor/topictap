@@ -4,6 +4,7 @@
 module App.Has where
 
 import Antiope.Env    (HasEnv (..))
+import App.AppEnv
 import App.Options
 import Control.Lens
 import Network.StatsD (StatsClient)
@@ -14,12 +15,13 @@ import qualified App.Lens   as L
 instance HasEnv E.AppEnv where
   environment = L.aws
 
-makeClassy ''StatsClient
+makeClassy ''AppLogger
+makeClassy ''AppOptions
+makeClassy ''AwsConfig
 makeClassy ''KafkaConfig
+makeClassy ''StatsClient
 makeClassy ''StatsConfig
 makeClassy ''StoreConfig
-makeClassy ''AwsConfig
-makeClassy ''AppOptions
 
 instance HasStatsClient E.AppEnv where
   statsClient = L.statsClient
@@ -30,7 +32,7 @@ instance HasKafkaConfig E.AppEnv where
 instance HasStatsConfig E.AppEnv where
   statsConfig = L.options . statsConfig
 
-instance E.HasAppLogger E.AppEnv where
+instance HasAppLogger E.AppEnv where
   appLogger = L.log
 
 instance HasAwsConfig E.AppEnv where
