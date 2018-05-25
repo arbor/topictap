@@ -27,7 +27,7 @@ import qualified System.Directory        as D
 import qualified System.IO.Streams       as IO
 
 -- | Handles the stream of incoming messages.
-handleStream :: MonadApp m
+handleStream :: MonadApp o m
              => SchemaRegistry
              -> FilePath
              -> Conduit (ConsumerRecord (Maybe ByteString) (Maybe ByteString)) m ()
@@ -47,7 +47,7 @@ handleToClosingOutputStream h = IO.makeOutputStream f
 updateOffset :: Offset -> Offset -> Offset
 updateOffset (Offset a) (Offset b) = Offset (a `max` b)
 
-outputStreamForMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m (IO.OutputStream BS.ByteString)
+outputStreamForMessage :: MonadApp o m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m (IO.OutputStream BS.ByteString)
 outputStreamForMessage parentPath msg = do
   entries <- use (L.fileCache . L.entries)
 
@@ -78,7 +78,7 @@ outputStreamForMessage parentPath msg = do
   where PartitionId partitionId = crPartition msg
         dirPath                 = parentPath <> "/" <> unTopicName (crTopic msg)
 
-writeDecodedMessage :: MonadApp m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m ()
+writeDecodedMessage :: MonadApp o m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m ()
 writeDecodedMessage parentPath msg = do
   os <- outputStreamForMessage parentPath msg
   liftIO $ IO.write (Just (LBS.toStrict (LT.encodeUtf8 (JT.encodeToLazyText (crValue msg))))) os
