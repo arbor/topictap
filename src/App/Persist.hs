@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+
 module App.Persist
   ( uploadAllFiles
   ) where
@@ -26,7 +27,6 @@ import Data.Time.Clock.POSIX         (utcTimeToPOSIXSeconds)
 import GHC.Int                       (Int64)
 import Kafka.Consumer                (Millis (..), Offset (..), PartitionId (..), Timestamp (..), TopicName (..))
 
-import qualified App.AppState.Lens     as L
 import qualified App.CancellationToken as CToken
 import qualified App.Has               as H
 import qualified App.Lens              as L
@@ -76,7 +76,7 @@ uploadFile :: MonadAWS m
            -> m ()
 uploadFile bkt tbl timestamp entry = do
   objKey <- liftIO $ mkS3Path timestamp entry
-  void $ putFile bkt objKey (entry ^. L.fileName)
+  void $ putFile bkt objKey (entry ^. L.backupEntry . L.fileName)
   void $ registerFile tbl timestamp entry (S3Location bkt objKey)
 
 -------------------------------------------------------------------------------
@@ -89,13 +89,14 @@ recTimestamp = \case
 
 mkS3Path :: UTCTime -> FileCacheEntry -> IO ObjectKey
 mkS3Path t e = do
-  hash <- toSha256Text <$> LBS.readFile (e ^. L.fileName)
-  let TopicName topicName = e ^. L.topicName
-  let PartitionId pid     = e ^. L.partitionId
-  let Offset firstOffset  = e ^. L.offsetFirst
-  let Offset maxOffset    = e ^. L.offsetMax
-  let firstTimestamp      = e ^. L.timestampFirst
-  let lastTimestamp       = e ^. L.timestampLast
+  let be = e ^. L.backupEntry
+  hash <- toSha256Text <$> LBS.readFile (be ^. L.fileName)
+  let TopicName topicName = be ^. L.topicName
+  let PartitionId pid     = be ^. L.partitionId
+  let Offset firstOffset  = be ^. L.offsetFirst
+  let Offset maxOffset    = be ^. L.offsetMax
+  let firstTimestamp      = be ^. L.timestampFirst
+  let lastTimestamp       = be ^. L.timestampLast
   let partDir   = T.pack topicName <> "/" <> T.pack (show pid)
   let prefix    = T.take 5 $ toSha256Text partDir
   let fullDir   = prefix <> "/" <> partDir
@@ -119,12 +120,13 @@ registerFile :: MonadAWS m
              -> S3Location
              -> m ()
 registerFile table time entry location = do
-  let TopicName topicName = entry ^. L.topicName
-  let PartitionId pid     = entry ^. L.partitionId
-  let Offset firstOffset  = entry ^. L.offsetFirst
-  let Offset maxOffset    = entry ^. L.offsetMax
-  let firstTimestamp      = entry ^. L.timestampFirst
-  let lastTimestamp       = entry ^. L.timestampLast
+  let be = entry ^. L.backupEntry
+  let TopicName topicName = be ^. L.topicName
+  let PartitionId pid     = be ^. L.partitionId
+  let Offset firstOffset  = be ^. L.offsetFirst
+  let Offset maxOffset    = be ^. L.offsetMax
+  let firstTimestamp      = be ^. L.timestampFirst
+  let lastTimestamp       = be ^. L.timestampLast
 
   let row = Map.fromList
             [ ("TopicPartition",  attributeValue & avS ?~ (toText topicName <> ":" <> toText pid))

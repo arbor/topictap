@@ -15,8 +15,7 @@ import Data.Maybe          (catMaybes)
 import Data.Semigroup      ((<>))
 import Network.StatsD      as S
 
-import qualified App.AppState.Lens as L
-import qualified App.Lens          as L
+import qualified App.Lens as L
 
 reportProgress :: (MonadLogger m, MonadStats m, MonadState AppState m) => m ()
 reportProgress = do

@@ -17,7 +17,7 @@ import Kafka.Conduit.Source                 (ConsumerRecord (..), Offset (..), P
 import System.IO                            (Handle, IOMode (..), hClose, hFlush, openFile)
 import Text.Printf
 
-import qualified App.AppState.Lens       as L
+import qualified App.Lens                as L
 import qualified Data.Aeson              as J
 import qualified Data.Aeson.Text         as JT
 import qualified Data.ByteString         as BS
@@ -55,8 +55,8 @@ outputStreamForMessage parentPath msg = do
   case M.lookup (crTopic msg, crPartition msg) entries of
     Just entry -> do
       (L.fileCache . L.entries %=) $ M.insert (crTopic msg, crPartition msg) $ entry
-        & L.offsetMax     %~ updateOffset (crOffset msg)
-        & L.timestampLast .~ crTimestamp msg
+        & L.backupEntry . L.offsetMax     %~ updateOffset (crOffset msg)
+        & L.backupEntry . L.timestampLast .~ crTimestamp msg
       return $ entry ^. L.outputStream
     Nothing -> do
       liftIO $ D.createDirectoryIfMissing True dirPath
@@ -65,13 +65,15 @@ outputStreamForMessage parentPath msg = do
       os <- liftIO $ handleToClosingOutputStream h
       zos <- liftIO $ IO.gzip IO.defaultCompressionLevel os
       let entry = FileCacheEntry
-            { _fileCacheEntryFileName       = filePath
-            , _fileCacheEntryOffsetFirst    = crOffset     msg
-            , _fileCacheEntryTimestampFirst = crTimestamp  msg
-            , _fileCacheEntryTimestampLast  = crTimestamp  msg
-            , _fileCacheEntryOffsetMax      = crOffset     msg
-            , _fileCacheEntryTopicName      = crTopic      msg
-            , _fileCacheEntryPartitionId    = crPartition  msg
+            { _fileCacheEntryBackupEntry = BackupEntry
+              { _backupEntryFileName       = filePath
+              , _backupEntryOffsetFirst    = crOffset     msg
+              , _backupEntryTimestampFirst = crTimestamp  msg
+              , _backupEntryTimestampLast  = crTimestamp  msg
+              , _backupEntryOffsetMax      = crOffset     msg
+              , _backupEntryTopicName      = crTopic      msg
+              , _backupEntryPartitionId    = crPartition  msg
+              }
             , _fileCacheEntryOutputStream   = zos
             }
       L.fileCache . L.entries %= M.insert (crTopic msg, crPartition msg) entry
