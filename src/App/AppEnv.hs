@@ -7,12 +7,11 @@ module App.AppEnv where
 import Antiope.Env    (Env)
 import App.Options
 import Arbor.Logger   (LogLevel, TimedFastLogger)
-import Control.Lens
 import Network.StatsD (StatsClient)
 
 data AppLogger = AppLogger
-  { _alLogger   :: TimedFastLogger
-  , _alLogLevel :: LogLevel
+  { _appLoggerLogger   :: TimedFastLogger
+  , _appLoggerLogLevel :: LogLevel
   }
 
 data AppEnv = AppEnv
@@ -21,5 +20,3 @@ data AppEnv = AppEnv
   , _appEnvLog         :: AppLogger
   , _appEnvAws         :: Env
   }
-
-makeClassy ''AppLogger

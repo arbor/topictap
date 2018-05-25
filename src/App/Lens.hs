@@ -7,6 +7,7 @@ import App.Options
 import Control.Lens
 
 makeFields ''AppEnv
+makeFields ''AppLogger
 makeFields ''AwsConfig
 makeFields ''KafkaConfig
 makeFields ''AppOptions
