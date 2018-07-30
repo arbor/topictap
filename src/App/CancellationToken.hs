@@ -1,8 +1,11 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module App.CancellationToken where
 
 import Data.IORef
+import GHC.Generics
 
-data CancellationStatus = Cancelled | Running deriving (Show, Eq)
+data CancellationStatus = Cancelled | Running deriving (Show, Eq, Generic)
 
 newtype CancellationToken = CancellationToken (IORef CancellationStatus)
 

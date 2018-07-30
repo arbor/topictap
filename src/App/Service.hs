@@ -1,15 +1,17 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module App.Service
   ( handleStream
   ) where
 
 import App.Application
-import App.AppState.Type
 import App.Codec                            (decodeMessage)
 import Conduit
 import Control.Lens                         (use, (%=), (%~), (&), (+=), (.~), (^.))
 import Data.ByteString                      (ByteString)
+import Data.Generics.Product.Any
 import Data.Monoid                          ((<>))
 import HaskellWorks.Data.Conduit.Combinator (effectC)
 import Kafka.Avro                           (SchemaRegistry)
@@ -17,7 +19,7 @@ import Kafka.Conduit.Source                 (ConsumerRecord (..), Offset (..), P
 import System.IO                            (Handle, IOMode (..), hClose, hFlush, openFile)
 import Text.Printf
 
-import qualified App.Lens                as L
+import qualified App.AppState.Type       as Z
 import qualified Data.Aeson              as J
 import qualified Data.Aeson.Text         as JT
 import qualified Data.ByteString         as BS
@@ -33,10 +35,10 @@ handleStream :: MonadApp o m
              -> FilePath
              -> Conduit (ConsumerRecord (Maybe ByteString) (Maybe ByteString)) m ()
 handleStream sr fp =
-     effectC (const (L.msgReadCount += 1))
+     effectC (const (the @"msgReadCount" += 1))
   .| mapMC (decodeMessage sr)
   .| effectC (writeDecodedMessage fp)
-  .| effectC (const (L.msgWriteCount += 1))
+  .| effectC (const (the @"msgWriteCount" += 1))
   .| mapC (const ())
 
 handleToClosingOutputStream :: Handle -> IO (IO.OutputStream ByteString)
@@ -50,33 +52,33 @@ updateOffset (Offset a) (Offset b) = Offset (a `max` b)
 
 outputStreamForMessage :: MonadApp o m => FilePath -> ConsumerRecord (Maybe BS.ByteString) J.Value -> m (IO.OutputStream BS.ByteString)
 outputStreamForMessage parentPath msg = do
-  entries <- use (L.fileCache . L.entries)
+  entries <- use (the @"fileCache" . the @"entries")
 
   case M.lookup (crTopic msg, crPartition msg) entries of
     Just entry -> do
-      (L.fileCache . L.entries %=) $ M.insert (crTopic msg, crPartition msg) $ entry
-        & L.backupEntry . L.offsetMax     %~ updateOffset (crOffset msg)
-        & L.backupEntry . L.timestampLast .~ crTimestamp msg
-      return $ entry ^. L.outputStream
+      (the @"fileCache" . the @"entries" %=) $ M.insert (crTopic msg, crPartition msg) $ entry
+        & the @"backupEntry" . the @"offsetMax"     %~ updateOffset (crOffset msg)
+        & the @"backupEntry" . the @"timestampLast" .~ crTimestamp msg
+      return $ entry ^. the @"outputStream"
     Nothing -> do
       liftIO $ D.createDirectoryIfMissing True dirPath
       let filePath = dirPath <> "/" <> printf "%05d" partitionId <> ".json"
       h <- liftIO $ openFile filePath WriteMode
       os <- liftIO $ handleToClosingOutputStream h
       zos <- liftIO $ IO.gzip IO.defaultCompressionLevel os
-      let entry = FileCacheEntry
-            { _fileCacheEntryBackupEntry = BackupEntry
-              { _backupEntryFileName       = filePath
-              , _backupEntryOffsetFirst    = crOffset     msg
-              , _backupEntryTimestampFirst = crTimestamp  msg
-              , _backupEntryTimestampLast  = crTimestamp  msg
-              , _backupEntryOffsetMax      = crOffset     msg
-              , _backupEntryTopicName      = crTopic      msg
-              , _backupEntryPartitionId    = crPartition  msg
+      let entry = Z.FileCacheEntry
+            { Z.backupEntry = Z.BackupEntry
+              { Z.fileName       = filePath
+              , Z.offsetFirst    = crOffset     msg
+              , Z.timestampFirst = crTimestamp  msg
+              , Z.timestampLast  = crTimestamp  msg
+              , Z.offsetMax      = crOffset     msg
+              , Z.topicName      = crTopic      msg
+              , Z.partitionId    = crPartition  msg
               }
-            , _fileCacheEntryOutputStream   = zos
+            , Z.outputStream   = zos
             }
-      L.fileCache . L.entries %= M.insert (crTopic msg, crPartition msg) entry
+      the @"fileCache" . the @"entries" %= M.insert (crTopic msg, crPartition msg) entry
       return zos
   where PartitionId partitionId = crPartition msg
         dirPath                 = parentPath <> "/" <> unTopicName (crTopic msg)

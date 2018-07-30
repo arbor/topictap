@@ -1,13 +1,16 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module App.Db where
 
 import App.Options.Types
-import Control.Monad.IO.Class (liftIO)
-import Control.Monad.Logger   (runStderrLoggingT)
-import Data.Function
+import Control.Lens
+import Control.Monad.IO.Class    (liftIO)
+import Control.Monad.Logger      (runStderrLoggingT)
+import Data.Generics.Product.Any
 import Data.Pool
-import Data.Time.Clock        (getCurrentTime)
+import Data.Time.Clock           (getCurrentTime)
 import Database.Persist.MySQL
 
 import qualified App.Db.Type        as DT
@@ -18,10 +21,10 @@ import qualified System.IO          as IO
 runDb :: DbConfig -> IO ()
 runDb dbConfig = do
   let connectionInfo = mkMySQLConnectInfo
-        (dbConfig & _dbConfigHost & T.unpack)
-        (dbConfig & _dbConfigUser & T.encodeUtf8)
-        (dbConfig & _dbConfigPassword & _passwordValue & T.encodeUtf8)
-        (dbConfig & _dbConfigDatabase & T.encodeUtf8)
+        (dbConfig ^. the @"host"      & T.unpack)
+        (dbConfig ^. the @"user"      & T.encodeUtf8)
+        (dbConfig ^. the @"password"  . the @"value" & T.encodeUtf8)
+        (dbConfig ^. the @"database"  & T.encodeUtf8)
 
   _ <- runStderrLoggingT $ withMySQLPool connectionInfo 10 $ \(pool :: Pool SqlBackend) -> liftIO $ do
     currentTime <- getCurrentTime

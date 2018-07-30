@@ -1,21 +1,28 @@
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE TemplateHaskell        #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module App.AppEnv where
 
-import Antiope.Env    (Env)
-import Arbor.Logger   (LogLevel, TimedFastLogger)
-import Network.StatsD (StatsClient)
+import Antiope.Env               (Env, HasEnv (..))
+import Arbor.Logger              (LogLevel, TimedFastLogger)
+import Data.Generics.Product.Any
+import GHC.Generics
+import Network.StatsD            (StatsClient)
 
 data AppLogger = AppLogger
-  { _appLoggerLogger   :: TimedFastLogger
-  , _appLoggerLogLevel :: LogLevel
-  }
+  { logger   :: TimedFastLogger
+  , logLevel :: LogLevel
+  } deriving Generic
 
 data AppEnv o = AppEnv
-  { _appEnvOptions     :: o
-  , _appEnvStatsClient :: StatsClient
-  , _appEnvLog         :: AppLogger
-  , _appEnvAws         :: Env
-  }
+  { options     :: o
+  , statsClient :: StatsClient
+  , logger      :: AppLogger
+  , aws         :: Env
+  } deriving Generic
+
+instance HasEnv (AppEnv o) where
+  environment = the @"aws"

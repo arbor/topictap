@@ -52,6 +52,7 @@ dependencies:
 - directory
 - exceptions
 - fast-logger
+- generic-lens
 - hs-arbor-logger
 - http-client
 - http-types
@@ -84,25 +85,6 @@ library:
   - -Wincomplete-record-updates
   - -Wincomplete-uni-patterns
   - -Wredundant-constraints
-  exposed-modules:
-  - App.AppEnv
-  - App.AppError
-  - App.Application
-  - App.AppState.Type
-  - App.CancellationToken
-  - App.Codec
-  - App.Conduit.Time
-  - App.Has
-  - App.Kafka
-  - App.Lens
-  - App.Commands
-  - App.Commands.Service
-  - App.Commands.Types
-  - App.Options.Types
-  - App.Persist
-  - App.Service
-  - App.ToSha256Text
-  - App.Types
   dependencies:
   - base64-bytestring
   - conduit-combinators

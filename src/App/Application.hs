@@ -1,7 +1,9 @@
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
 
 module App.Application
   ( AppName
@@ -23,11 +25,10 @@ import Control.Monad.Logger         (LoggingT, MonadLogger)
 import Control.Monad.Reader
 import Control.Monad.State.Strict   (MonadState (..), StateT, execStateT)
 import Control.Monad.Trans.Resource
+import Data.Generics.Product.Any
+import Data.Generics.Product.Fields
 import Data.Text                    (Text)
 import Network.StatsD               as S
-
-import qualified App.Has  as H ()
-import qualified App.Lens as L
 
 type AppName = Text
 
@@ -60,14 +61,19 @@ newtype Application o a = Application
 deriving instance MonadApp o (Application o)
 
 instance MonadStats (Application o) where
-  getStatsClient = reader _appEnvStatsClient
+  getStatsClient = reader (^. the @"statsClient")
 
-runApplication :: (Show o, L.HasLogLevel o LogLevel) => AppEnv o -> Application o () -> IO AppState
+runApplication ::
+  ( Show o
+  , HasField' "logLevel" o LogLevel)
+  => AppEnv o
+  -> Application o ()
+  -> IO AppState
 runApplication envApp f =
   runResourceT
     . runAWS envApp
-    . runTimedLogT (envApp ^. L.options . L.logLevel) (envApp ^. L.log . L.logger)
+    . runTimedLogT (envApp ^. the @"options" . the @"logLevel") (envApp ^. the @"logger" . the @"logger")
     . flip execStateT appStateEmpty
     $ do
-        logInfo $ show (envApp ^. L.options)
+        logInfo $ show (envApp ^. the @"options")
         runReaderT (unApp f) envApp

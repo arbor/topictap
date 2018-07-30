@@ -1,6 +1,8 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 
 module App.Commands.Service
   ( cmdService
@@ -11,12 +13,10 @@ import Antiope.Env                          (mkEnv)
 import App.AppEnv
 import App.Application
 import App.CancellationToken                (newCancellationToken)
-import App.Commands.Types
 import App.Conduit
 import App.Conduit.Time                     (sampleC)
 import App.Kafka                            (mkConsumer)
 import App.Log
-import App.Options.Types
 import App.Persist                          (uploadAllFiles)
 import App.Service                          (handleStream)
 import App.Stats
@@ -26,6 +26,7 @@ import Control.Exception                    (IOException, catch)
 import Control.Lens                         ((^.))
 import Control.Monad                        (forM_, unless, void)
 import Control.Monad.Logger                 (LogLevel (..))
+import Data.Generics.Product.Any
 import Data.Semigroup                       ((<>))
 import HaskellWorks.Data.Conduit.Combinator (effectC, effectC', rightC)
 import Kafka.Avro                           (schemaRegistry)
@@ -35,31 +36,32 @@ import System.Directory                     (createDirectoryIfMissing, removeDir
 import System.Environment                   (getProgName)
 import System.IO.Error                      (ioeGetErrorType, isDoesNotExistErrorType)
 
-import qualified App.Has   as H
-import qualified App.Lens  as L
-import qualified Data.Text as T
+import qualified App.Commands.Types  as Z
+import qualified App.Options.Types   as Z
+import qualified Data.Text           as T
+import qualified Options.Applicative as OA
 
 cmdService :: Mod CommandFields (IO ())
 cmdService = command "service" $ flip info idm $ runService <$> optsService
 
-runService :: AppOptions -> IO ()
+runService :: Z.AppOptions -> IO ()
 runService opt = do
   progName <- T.pack <$> getProgName
-  let logLvl    = opt ^. L.logLevel
-  let kafkaConf = opt ^. L.kafkaConfig
-  let statsConf = opt ^. L.statsConfig
+  let logLvl    = opt ^. the @"logLevel"
+  let kafkaConf = opt ^. the @"kafkaConfig"
+  let statsConf = opt ^. the @"statsConfig"
 
   ctoken <- newCancellationToken
 
   withStdOutTimedFastLogger $ \lgr -> do
     withStatsClient progName statsConf $ \stats -> do
       let envLogger = AppLogger lgr logLvl
-      envAws <- mkEnv (opt ^. H.awsConfig . L.region) (logAWS envLogger)
+      envAws <- mkEnv (opt ^. the @"awsConfig" . the @"region") (logAWS envLogger)
       let envApp = AppEnv opt stats envLogger envAws
 
       void . runApplication envApp $ do
-        let inputTopics       = opt ^. L.inputTopics
-        let stagingDirectory  = opt ^. L.stagingDirectory
+        let inputTopics       = opt ^. the @"inputTopics"
+        let stagingDirectory  = opt ^. the @"stagingDirectory"
 
         logInfo "Creating Kafka Consumer on the following topics:"
         forM_ inputTopics $ \inputTopic -> logInfo $ "  " <> show inputTopic
@@ -74,18 +76,18 @@ runService opt = do
             throwM e
         liftIO $ createDirectoryIfMissing True readyDirectory
 
-        consumer <- mkConsumer Nothing (opt ^. L.inputTopics) (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
+        consumer <- mkConsumer Nothing (opt ^. the @"inputTopics") (const (pushLogMessage lgr LevelWarn ("Rebalance is in progress!" :: String)))
 
         logInfo "Instantiating Schema Registry"
-        sr <- schemaRegistry (kafkaConf ^. L.schemaRegistryAddress)
+        sr <- schemaRegistry (kafkaConf ^. the @"schemaRegistryAddress")
 
         logInfo "Running Kafka Consumer"
         runConduit $
-          kafkaSourceNoClose consumer (kafkaConf ^. L.pollTimeoutMs)
+          kafkaSourceNoClose consumer (kafkaConf ^. the @"pollTimeoutMs")
           .| throwLeftSatisfy isFatal                      -- throw any fatal error
           .| skipNonFatalExcept [isPollTimeout]            -- discard any non-fatal except poll timeouts
-          .| rightC (handleStream sr (opt ^. L.stagingDirectory))
-          .| sampleC (opt ^. H.storeConfig . L.uploadInterval)
+          .| rightC (handleStream sr (opt ^. the @"stagingDirectory"))
+          .| sampleC (opt ^. the @"storeConfig" . the @"uploadInterval")
           .| effectC' (logInfo "Uploading files...")
           .| effectC (\(t, _) -> uploadAllFiles ctoken t)
           .| effectC' (logInfo "Uploading completed")
@@ -95,24 +97,24 @@ runService opt = do
 
     pushLogMessage lgr LevelError ("Premature exit, must not happen." :: String)
 
-optsService :: Parser AppOptions
-optsService = AppOptions
-  <$> readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
+optsService :: Parser Z.AppOptions
+optsService = Z.AppOptions
+  <$> Z.readOptionMsg "Valid values are LevelDebug, LevelInfo, LevelWarn, LevelError"
       (  long "log-level"
       <> metavar "LOG_LEVEL"
-      <> showDefault <> value LevelInfo
+      <> showDefault <> OA.value LevelInfo
       <> help "Log level"
       )
-  <*> ( (TopicName <$>) . (>>= words) . (fmap commaToSpace <$>) <$> many topicOption)
+  <*> ( (TopicName <$>) . (>>= words) . (fmap Z.commaToSpace <$>) <$> many topicOption)
   <*> strOption
       (  long "staging-directory"
       <> metavar "PATH"
       <> help "Staging directory where generated files are stored and scheduled for upload to S3"
       )
-  <*> awsConfigParser
-  <*> kafkaConfigParser
-  <*> statsConfigParser
-  <*> storeConfigParser
+  <*> Z.awsConfigParser
+  <*> Z.kafkaConfigParser
+  <*> Z.statsConfigParser
+  <*> Z.storeConfigParser
   where topicOption = strOption
           (  long "topic"
           <> metavar "TOPIC"

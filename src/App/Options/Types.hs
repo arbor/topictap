@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module App.Options.Types where
 
 import Antiope.Core         (FromText (..), Region (..), fromText)
@@ -6,6 +9,7 @@ import Antiope.S3           (BucketName)
 import App.Types            (Seconds (..))
 import Data.Semigroup       ((<>))
 import Data.Text            (Text)
+import GHC.Generics
 import Kafka.Consumer.Types
 import Kafka.Types
 import Network.Socket       (HostName)
@@ -13,78 +17,79 @@ import Network.StatsD       (SampleRate (..))
 import Options.Applicative
 import Text.Read            (readEither)
 
-import qualified Data.Text as T
+import qualified Data.Text           as T
+import qualified Options.Applicative as OA
 
 newtype StatsTag = StatsTag (Text, Text) deriving (Show, Eq)
 
 data KafkaConfig = KafkaConfig
-  { _kafkaConfigBroker                :: BrokerAddress
-  , _kafkaConfigSchemaRegistryAddress :: String
-  , _kafkaConfigPollTimeoutMs         :: Timeout
-  , _kafkaConfigQueuedMaxMsgKBytes    :: Int
-  , _kafkaConfigConsumerGroupId       :: ConsumerGroupId
-  , _kafkaConfigDebugOpts             :: String
-  , _kafkaConfigCommitPeriodSec       :: Int
-  } deriving (Show)
+  { broker                :: BrokerAddress
+  , schemaRegistryAddress :: String
+  , pollTimeoutMs         :: Timeout
+  , queuedMaxMsgKBytes    :: Int
+  , consumerGroupId       :: ConsumerGroupId
+  , debugOpts             :: String
+  , commitPeriodSec       :: Int
+  } deriving (Show, Generic)
 
 data StatsConfig = StatsConfig
-  { _statsConfigHost       :: HostName
-  , _statsConfigPort       :: Int
-  , _statsConfigTags       :: [StatsTag]
-  , _statsConfigSampleRate :: SampleRate
-  } deriving (Show)
+  { host       :: HostName
+  , port       :: Int
+  , tags       :: [StatsTag]
+  , sampleRate :: SampleRate
+  } deriving (Show, Generic)
 
 data StoreConfig = StoreConfig
-  { _storeConfigBucket         :: BucketName
-  , _storeConfigIndex          :: TableName
-  , _storeConfigUploadInterval :: Seconds
-  } deriving (Show)
+  { bucket         :: BucketName
+  , index          :: TableName
+  , uploadInterval :: Seconds
+  } deriving (Show, Generic)
 
 data AwsConfig = AwsConfig
-  { _awsConfigRegion        :: Region
-  , _awsConfigUploadThreads :: Int
-  } deriving (Show)
+  { region        :: Region
+  , uploadThreads :: Int
+  } deriving (Show, Generic)
 
 newtype Password = Password
-  { _passwordValue :: Text
-  } deriving (Read, Eq)
+  { value :: Text
+  } deriving (Read, Eq, Generic)
 
 instance Show Password where
   show _ = "************"
 
 data DbConfig = DbConfig
-  { _dbConfigHost     :: Text
-  , _dbConfigUser     :: Text
-  , _dbConfigPassword :: Password
-  , _dbConfigDatabase :: Text
-  } deriving (Eq, Show)
+  { host     :: Text
+  , user     :: Text
+  , password :: Password
+  , database :: Text
+  } deriving (Eq, Show, Generic)
 
 statsConfigParser :: Parser StatsConfig
 statsConfigParser = StatsConfig
   <$> strOption
       (   long "statsd-host"
       <>  metavar "HOST_NAME"
-      <>  showDefault <> value "127.0.0.1"
+      <>  showDefault <> OA.value "127.0.0.1"
       <>  help "StatsD host name or IP address"
       )
   <*> readOption
       (   long "statsd-port"
       <>  metavar "PORT"
-      <>  showDefault <> value 8125
+      <>  showDefault <> OA.value 8125
       <>  help "StatsD port"
       <>  hidden
       )
   <*> ( string2Tags <$> strOption
         (   long "statsd-tags"
         <>  metavar "TAGS"
-        <>  showDefault <> value []
+        <>  showDefault <> OA.value []
         <>  help "StatsD tags"
         )
       )
   <*> ( SampleRate <$> readOption
         (   long "statsd-sample-rate"
         <>  metavar "SAMPLE_RATE"
-        <>  showDefault <> value 0.01
+        <>  showDefault <> OA.value 0.01
         <>  help "StatsD sample rate"
         )
       )
@@ -104,13 +109,13 @@ kafkaConfigParser = KafkaConfig
   <*> ( Timeout <$> readOption
         (   long "kafka-poll-timeout-ms"
         <>  metavar "KAFKA_POLL_TIMEOUT_MS"
-        <>  showDefault <> value 1000
+        <>  showDefault <> OA.value 1000
         <>  help "Kafka poll timeout (in milliseconds)")
         )
   <*> readOption
       (   long "kafka-queued-max-messages-kbytes"
       <>  metavar "KAFKA_QUEUED_MAX_MESSAGES_KBYTES"
-      <>  showDefault <> value 100000
+      <>  showDefault <> OA.value 100000
       <>  help "Kafka queued.max.messages.kbytes"
       )
   <*> ( ConsumerGroupId <$> strOption
@@ -122,13 +127,13 @@ kafkaConfigParser = KafkaConfig
   <*> strOption
       (   long "kafka-debug-enable"
       <>  metavar "KAFKA_DEBUG_ENABLE"
-      <>  showDefault <> value "broker,protocol"
+      <>  showDefault <> OA.value "broker,protocol"
       <>  help "Kafka debug modules, comma separated names: see debug in CONFIGURATION.md"
       )
   <*> readOption
       (   long "kafka-consumer-commit-period-sec"
       <>  metavar "KAFKA_CONSUMER_COMMIT_PERIOD_SEC"
-      <>  showDefault <> value 60
+      <>  showDefault <> OA.value 60
       <>  help "Kafka consumer offsets commit period (in seconds)"
       )
 
@@ -137,13 +142,13 @@ awsConfigParser = AwsConfig
   <$> readOrFromTextOption
       (  long "region"
       <> metavar "AWS_REGION"
-      <> showDefault <> value Oregon
+      <> showDefault <> OA.value Oregon
       <> help "The AWS region in which to operate"
       )
   <*> readOption
       (  long "upload-threads"
       <> metavar "NUM_THREADS"
-      <> showDefault <> value 20
+      <> showDefault <> OA.value 20
       <> help "Number of parallel S3 operations"
       )
 
@@ -165,7 +170,6 @@ storeConfigParser = StoreConfig
         <> help "Interval in seconds to upload files to S3"
         )
       )
-
 
 commaToSpace :: Char -> Char
 commaToSpace ',' = ' '
