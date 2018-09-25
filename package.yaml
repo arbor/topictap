@@ -39,6 +39,7 @@ dependencies:
 - antiope-core
 - antiope-s3
 - antiope-dynamodb
+- arbor-datadog
 - async-pool
 - avro
 - base16-bytestring
@@ -48,7 +49,6 @@ dependencies:
 - conduit-extra
 - containers
 - cryptohash
-- datadog
 - directory
 - exceptions
 - fast-logger

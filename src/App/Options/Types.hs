@@ -3,19 +3,19 @@
 
 module App.Options.Types where
 
-import Antiope.Core         (FromText (..), Region (..), fromText)
-import Antiope.DynamoDB     (TableName)
-import Antiope.S3           (BucketName)
-import App.Types            (Seconds (..))
-import Data.Semigroup       ((<>))
-import Data.Text            (Text)
+import Antiope.Core              (FromText (..), Region (..), fromText)
+import Antiope.DynamoDB          (TableName)
+import Antiope.S3                (BucketName)
+import App.Types                 (Seconds (..))
+import Arbor.Network.StatsD.Type (SampleRate (..))
+import Data.Semigroup            ((<>))
+import Data.Text                 (Text)
 import GHC.Generics
 import Kafka.Consumer.Types
 import Kafka.Types
-import Network.Socket       (HostName)
-import Network.StatsD       (SampleRate (..))
+import Network.Socket            (HostName)
 import Options.Applicative
-import Text.Read            (readEither)
+import Text.Read                 (readEither)
 
 import qualified Data.Text           as T
 import qualified Options.Applicative as OA
