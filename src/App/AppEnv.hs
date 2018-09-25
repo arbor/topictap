@@ -8,9 +8,9 @@ module App.AppEnv where
 
 import Antiope.Env               (Env, HasEnv (..))
 import Arbor.Logger              (LogLevel, TimedFastLogger)
+import Arbor.Network.StatsD      (StatsClient)
 import Data.Generics.Product.Any
 import GHC.Generics
-import Network.StatsD            (StatsClient)
 
 data AppLogger = AppLogger
   { logger   :: TimedFastLogger

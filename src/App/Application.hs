@@ -17,6 +17,7 @@ import App.AppEnv
 import App.AppState.Type
 import App.Orphans                  ()
 import Arbor.Logger
+import Arbor.Network.StatsD         (MonadStats)
 import Control.Lens
 import Control.Monad.Base
 import Control.Monad.Catch
@@ -28,7 +29,8 @@ import Control.Monad.Trans.Resource
 import Data.Generics.Product.Any
 import Data.Generics.Product.Fields
 import Data.Text                    (Text)
-import Network.StatsD               as S
+
+import qualified Arbor.Network.StatsD as S
 
 type AppName = Text
 
